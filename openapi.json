@@ -1,0 +1,218 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "ZKshare API",
+    "version": "1.0.0",
+    "description": "ZKshare — MCP-native + REST. Operations: store, prove, share, search, enclave. Tiers: Free 1k ops/mo, Starter $19 / 20k, Pro $49 / 100k + audit export, Enterprise custom. Metered overages via Stripe ($0.005–$0.02/op typical)."
+  },
+  "servers": [{ "url": "/", "description": "Same origin as Next.js app" }],
+  "paths": {
+    "/api/v1/context": {
+      "post": {
+        "summary": "Context operations",
+        "security": [{ "ApiKeyAuth": [] }],
+        "parameters": [
+          {
+            "name": "x-request-id",
+            "in": "header",
+            "required": false,
+            "schema": { "type": "string", "format": "uuid" },
+            "description": "Optional idempotency / tracing id (echoed on response)"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/ContextRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ContextSuccess" }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation or proof failure",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ContextError" }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ContextError" }
+              }
+            }
+          },
+          "404": {
+            "description": "Fact not found",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ContextError" }
+              }
+            }
+          },
+          "413": {
+            "description": "Payload too large",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ContextError" }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited (includes Retry-After header)",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ContextError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/health": {
+      "get": {
+        "summary": "Liveness (edge; no database)",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": { "type": "boolean" },
+                    "service": { "type": "string" },
+                    "timestamp": { "type": "string", "format": "date-time" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/health/ready": {
+      "get": {
+        "summary": "Readiness (database connectivity)",
+        "responses": {
+          "200": {
+            "description": "Database reachable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": { "type": "boolean" },
+                    "database": { "type": "boolean" },
+                    "timestamp": { "type": "string", "format": "date-time" }
+                  }
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Not ready",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": { "type": "boolean" },
+                    "database": { "type": "boolean" },
+                    "reason": { "type": "string" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "x-api-key"
+      }
+    },
+    "schemas": {
+      "ContextRequest": {
+        "type": "object",
+        "required": ["operation"],
+        "properties": {
+          "operation": {
+            "type": "string",
+            "enum": ["store", "prove", "share", "search", "enclave"]
+          },
+          "user_id": { "type": "string", "description": "Logical user scope (recommended)" },
+          "fact_key": { "type": "string" },
+          "value": { "type": "string", "description": "Plaintext for store only; encrypted server-side" },
+          "query": { "type": "string" },
+          "recipient_agent_id": { "type": "string" },
+          "action": { "type": "string" },
+          "parameters": { "type": "object", "additionalProperties": true },
+          "embedding": {
+            "type": "array",
+            "items": { "type": "number" },
+            "minItems": 1536,
+            "maxItems": 1536,
+            "description": "Optional for store: client-supplied 1536-dim vector; skips server embedding RPC for this fact"
+          }
+        }
+      },
+      "ContextSuccess": {
+        "type": "object",
+        "required": ["success", "operation", "data", "proof", "verified", "timestamp", "usage"],
+        "properties": {
+          "success": { "type": "boolean", "const": true },
+          "operation": { "type": "string" },
+          "data": { "type": "object", "additionalProperties": true },
+          "proof": { "type": ["string", "null"] },
+          "verified": { "type": "boolean" },
+          "timestamp": { "type": "string", "format": "date-time" },
+          "request_id": { "type": "string", "description": "Correlation id for logs / support" },
+          "usage": {
+            "type": "object",
+            "properties": {
+              "calls": { "type": "integer" },
+              "limit": { "type": "integer" }
+            }
+          }
+        }
+      },
+      "ContextError": {
+        "type": "object",
+        "required": ["success", "error", "message"],
+        "properties": {
+          "success": { "type": "boolean", "const": false },
+          "request_id": { "type": "string" },
+          "error": {
+            "type": "string",
+            "enum": [
+              "INVALID_API_KEY",
+              "RATE_LIMITED",
+              "VALIDATION_ERROR",
+              "FACT_NOT_FOUND",
+              "PROOF_FAILED",
+              "INTERNAL_ERROR"
+            ]
+          },
+          "message": { "type": "string" }
+        }
+      }
+    }
+  }
+}
