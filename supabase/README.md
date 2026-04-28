@@ -20,6 +20,8 @@ If you keep migrations only in Git and use hosted Supabase, `db push` applies an
    - `20260428100001_core_tables.sql`
    - `20260428100002_functions_rls_ivfflat.sql`
    - `20260428100003_upgrade_legacy.sql` (only if you already had older tables; safe for greenfield too)
+   - `20260429100000_client_encrypted_e2ee.sql` (`facts.client_encrypted`, `match_facts` drop/create)
+   - `20260429200000_match_facts_server_sealed_only.sql` (optional follow-up if an older `match_facts` lacked the server-sealed filter)
 
 ## After migrating
 

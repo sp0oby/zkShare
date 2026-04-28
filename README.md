@@ -1,80 +1,114 @@
-# ZKshare v1.0
+# zkShare
 
-**Tagline:** Zero-knowledge context sharing for AI agents and humans — private by design.  
-**Creator:** ｓｐｏｏｂｓ · April 2026
+Monorepo for a **single HTTP entrypoint** (`POST /api/v1/context`) that stores **encrypted facts**, runs **semantic search** (pgvector), issues **HMAC-sealed proof envelopes** for yes/no answers, and supports an **optional client-sealed (E2EE) store** where the server never sees plaintext. The app is a **Next.js** (App Router) deployment with **Supabase** (Postgres + Auth); rate limits and billing integrations are optional operational layers.
 
-Privacy-first **single-endpoint API** (`POST /api/v1/context`): encrypted facts, ZK-style proof envelopes, semantic search (pgvector-ready), and a **WASM-class simulated enclave** with production-grade attestation metadata. Stack: **Next.js 16** App Router, **Supabase** (Auth + Postgres), **Upstash** rate limits, **Stripe** subscriptions + metered overages, **Tailwind 4** + **shadcn/ui**.
+This README is written for **operators and integrators** (self-host or audit), not as product marketing.
 
-## Pricing (PRD)
+---
 
-| Tier | Price | Included ops/mo | Notes |
-|------|-------|-----------------|--------|
-| Free | $0 | 1,000 | Testing & light agents |
-| Starter | $19 | 20,000 | Higher rate limits |
-| Pro | $49 | 100,000 | Priority support + **audit CSV export** |
-| Enterprise | Custom | Contract | Unlimited + SLA + real TEE path + SOC2 alignment |
+## Behavior (API contract)
 
-**Overages:** Stripe **metered** billing; target **$0.005–$0.02** per extra operation with volume tiers.
+| Operation | Role |
+|-----------|------|
+| `store` | **Server-sealed:** `value` is encrypted server-side; embedding from model or client-supplied `embedding` (1536 dims). **Client-sealed:** caller sends `ciphertext`, `iv`, `auth_tag`, `commitment`, and **required** `embedding`; server persists blobs only (`client_encrypted = true`). |
+| `prove` / `share` | Load a **server-sealable** fact, decrypt in process, derive yes/no (LLM or heuristics — see `SECURITY.md`), return signed proof. **Client-sealed facts** return `422` / `CLIENT_ENCRYPTED`. |
+| `search` | Embeds the query server-side, calls `match_facts` RPC. **Only** rows with `client_encrypted = false` participate (no server-side ranking of E2EE ciphertext). |
+| `verify_proof` | Validates a proof string **without** reading fact plaintext. Malformed envelope → `400`; wrong HMAC → `200` with `data.valid: false`. |
+| `enclave` | Simulated WASM “enclave” path with JWT-style execution attestation (see `lib/enclave.ts`). |
 
-## Quick start
+Authoritative request/response shapes: [`types/index.ts`](./types/index.ts), [`openapi.json`](./openapi.json).
+
+---
+
+## Architecture
+
+- **Runtime:** Node.js route handlers for `/api/v1/context` (not Edge) so crypto and Supabase service role behave predictably.
+- **Data:** `facts` (ciphertext, iv, auth_tag, commitment, `vector(1536)` embedding, `client_encrypted`), `api_keys`, `audit_logs`, `share_tokens`. RLS denies direct `anon` / `authenticated` access; the server uses **service_role** only.
+- **Search:** `match_facts(api_key_id, logical_user_id, query_embedding, match_count)` — security definer, returns server-sealed rows only. Replacing this function with a different `RETURNS TABLE` shape requires **`DROP FUNCTION …` first** (Postgres limitation); see migrations.
+- **Secrets:** `ZKSHARE_ENCRYPTION_SECRET` (AES-GCM for server-sealed payloads), `ZKSHARE_PROOF_SECRET` (commitments + proof HMACs). See [`SECURITY.md`](./SECURITY.md) for LLM routing, CORS, and operational checklist.
+
+---
+
+## Repository layout
+
+| Path | Purpose |
+|------|---------|
+| `app/` | Routes: marketing pages, dashboard, `api/v1/context`, auth callback, webhooks, health. |
+| `lib/` | Encryption, embeddings, ZK/proof helpers, rate limit, Supabase server/browser clients, search hydration. |
+| `components/` | UI (shadcn-style). |
+| `supabase/migrations/` | Ordered SQL: extension, tables, RPCs, RLS, upgrades, `client_encrypted` + `match_facts` updates. |
+| `circuits/` | Circom-oriented assets / notes for future Groth16 wiring (`snarkjs` is a dependency). |
+
+There is **no** separate `frontend/` tree; the Next.js app under `app/` is the only web surface in this repo.
+
+---
+
+## Prerequisites
+
+- Node 20+ (project uses `pnpm`; `npm` / `yarn` work if you adjust lockfile usage).
+- Supabase project with Postgres + Auth.
+- Optional: Upstash Redis (rate limits), Stripe (plans — see env template), OpenRouter or OpenAI for embeddings/chat.
+
+---
+
+## Local development
 
 ```bash
 pnpm install
 cp .env.local.example .env.local
+# Fill Supabase keys and ZKSHARE_* secrets (min length per .env.local.example)
 pnpm dev
 ```
 
-### Test the main endpoint
+Apply migrations before exercising the API (see [`supabase/README.md`](./supabase/README.md)).
+
+### Smoke requests
 
 ```bash
-curl -X POST http://localhost:3000/api/v1/context \
+curl -sS -X POST http://localhost:3000/api/v1/context \
   -H "x-api-key: zk_live_..." \
   -H "Content-Type: application/json" \
-  -d "{\"operation\":\"store\",\"user_id\":\"user_123\",\"fact_key\":\"vacation_preference\",\"value\":\"strongly prefers beach vacations\"}"
+  -d "{\"operation\":\"store\",\"user_id\":\"user_123\",\"fact_key\":\"example\",\"value\":\"hello\"}"
 ```
 
 ```bash
-curl -X POST http://localhost:3000/api/v1/context \
+curl -sS -X POST http://localhost:3000/api/v1/context \
   -H "x-api-key: zk_live_..." \
   -H "Content-Type: application/json" \
-  -d "{\"operation\":\"prove\",\"user_id\":\"user_123\",\"fact_key\":\"vacation_preference\",\"query\":\"does the user prefer beach vacations?\"}"
+  -d "{\"operation\":\"prove\",\"user_id\":\"user_123\",\"fact_key\":\"example\",\"query\":\"does the fact say hello?\"}"
 ```
 
-- **Liveness (edge):** `GET /api/health`
-- **Readiness (DB):** `GET /api/health/ready`
-- **OpenAPI:** [`openapi.json`](./openapi.json)
-- **Production checklist:** [`SECURITY.md`](./SECURITY.md)
+- **Liveness:** `GET /api/health`
+- **Readiness:** `GET /api/health/ready`
 
-## Database migrations (production)
+---
 
-Versioned SQL lives in [`supabase/migrations/`](./supabase/migrations/). Apply in order — see [`supabase/README.md`](./supabase/README.md) for **Supabase CLI** (`supabase db push`) or **SQL Editor** steps.
+## Migrations and production
 
-Includes: **pgvector**, `api_keys` / `facts` / `audit_logs` / `share_tokens`, **IVFFlat** index, **`match_facts`** RPC, **`increment_api_key_usage`** (atomic counters), **RLS** deny policies for `anon` / `authenticated`, and **`upgrade_legacy`** for older schemas (jsonb embeddings → vector, 5k → 1k free tier alignment).
+- Run SQL in **timestamp order** (CLI `supabase db push` or paste per file in the Supabase SQL editor).
+- Auth redirect URLs must include your deployment’s `/auth/callback`.
+- Key revocation: `POST /api/keys/:id/revoke` (session-authenticated) or set `revoked_at` via SQL.
 
-**Auth:** Email magic link; redirect `http://localhost:3000/auth/callback` (and production).
+---
 
-**Key revocation:** `POST /api/keys/:id/revoke` (session cookie) sets `revoked_at` — keys fail `validateApiKey` immediately.
+## Zero-knowledge / proofs (precise wording)
 
-## ZK / Circom
+Today’s **proof** field is a **versioned JSON object + HMAC** (`lib/zk.ts`), binding commitment, query, and yes/no answer. **snarkjs** is included for pipeline experiments; Groth16 verification is **not** wired as the default trust path in API responses yet. Treat marketing copy that implies full SNARK verification on every response as **aspirational** unless you ship the circuit artifacts and verifier path.
 
-- Runtime: **`snarkjs`** in `package.json`; Circom templates in [`circuits/`](./circuits/README.md).
-- API responses use **commitment + HMAC-sealed** transcripts today; attach **Groth16** artifacts once `commit.wasm` / `commit.zkey` are built (see `circuits/README.md`).
+---
 
-## Security
+## GitHub “About” (sidebar metadata)
 
-See [`SECURITY.md`](./SECURITY.md). Summary: lock down **CORS**, use **security headers** in [`next.config.mjs`](./next.config.mjs), keep **service_role** server-only, and run **migrations** on every deploy.
+GitHub does not read this file automatically. Set **Repository description** and **Topics** in the repo **Settings → General**, or use `gh repo edit` locally.
 
-## Dashboard & auth flows
+**Suggested short description (≤350 chars):**
 
-- **Dashboard** nav link → `/dashboard` (middleware sends unauthenticated users to `/api-key?next=/dashboard`).
-- On that page, choose **Sign in** (existing email, `shouldCreateUser: false`) or **Create account** (new user).
+> Single-endpoint context API: encrypted facts, pgvector search, HMAC proof envelopes, optional client-sealed storage. Next.js, Supabase, TypeScript.
 
-## Layout
+**Suggested topics:** `nextjs` `supabase` `postgresql` `pgvector` `typescript` `privacy` `encryption` `api` `zero-knowledge` `semantic-search`
 
-- `app/` — marketing UI + dashboard + API routes  
-- `frontend/` — original reference copy  
-- `lib/supabase.ts` — browser-safe re-export; server clients in `lib/supabase-server.ts`
+---
 
 ## License
 
-Your terms.
+Specify your license in this section (repository default is not set by the maintainers here).
