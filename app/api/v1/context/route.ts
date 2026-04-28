@@ -1,13 +1,18 @@
 import { randomBytes, randomUUID } from "crypto";
 import { NextResponse, type NextRequest } from "next/server";
 import { contextRequestSchema } from "@/types";
-import type { ContextOperation } from "@/types";
+import type { ApiErrorCode, ContextOperation } from "@/types";
 import { validateApiKey, incrementApiKeyUsage } from "@/lib/api-key";
 import { rateLimitOrThrow, RATE_LIMIT_RETRY_AFTER_SEC } from "@/lib/rate-limit";
 import { writeAuditLog } from "@/lib/audit";
 import { createSupabaseServiceRoleClient } from "@/lib/supabase-server";
 import { encryptFactPlaintext } from "@/lib/encryption";
-import { computeCommitment, buildProofPayload, answerYesNoFromPlaintext } from "@/lib/zk";
+import {
+  computeCommitment,
+  buildProofPayload,
+  answerYesNoFromPlaintext,
+  verifyZkshareProofDetailed,
+} from "@/lib/zk";
 import { DB_EMBEDDING_DIM, embedText, projectEmbeddingToDb, toPgVectorString } from "@/lib/embeddings";
 import { decryptFactRow } from "@/lib/encryption";
 import { simulateEnclave } from "@/lib/enclave";
@@ -48,7 +53,7 @@ function err(
   request: NextRequest,
   requestId: string,
   status: number,
-  code: "INVALID_API_KEY" | "RATE_LIMITED" | "VALIDATION_ERROR" | "FACT_NOT_FOUND" | "PROOF_FAILED" | "INTERNAL_ERROR",
+  code: ApiErrorCode,
   message: string,
   extraHeaders?: Record<string, string>,
 ) {
@@ -152,6 +157,51 @@ export async function POST(request: NextRequest) {
   try {
     switch (input.operation) {
       case "store": {
+        const hasClientBundle = Boolean(
+          input.ciphertext?.trim() &&
+            input.iv?.trim() &&
+            input.auth_tag?.trim() &&
+            input.commitment?.trim(),
+        );
+
+        if (hasClientBundle) {
+          const embeddingVec = projectEmbeddingToDb(input.embedding!);
+
+          const { data: inserted, error } = await supabase
+            .from("facts")
+            .upsert(
+              {
+                api_key_id: keyRow.id,
+                logical_user_id: logicalUserId,
+                fact_key: input.fact_key!,
+                ciphertext: input.ciphertext!.trim(),
+                iv: input.iv!.trim(),
+                auth_tag: input.auth_tag!.trim(),
+                commitment: input.commitment!.trim(),
+                embedding: toPgVectorString(embeddingVec),
+                client_encrypted: true,
+              },
+              { onConflict: "api_key_id,logical_user_id,fact_key" },
+            )
+            .select("id")
+            .single();
+
+          if (error) {
+            return err(request, requestId, 500, "INTERNAL_ERROR", error.message);
+          }
+
+          return finish(
+            "store",
+            {
+              fact_id: inserted.id,
+              commitment: input.commitment!.trim(),
+              client_encrypted: true,
+            },
+            null,
+            true,
+          );
+        }
+
         const enc = encryptFactPlaintext(input.value!);
         const commitment = computeCommitment(input.fact_key!, input.value!);
         const embeddingVec =
@@ -171,6 +221,7 @@ export async function POST(request: NextRequest) {
               auth_tag: enc.authTag,
               commitment,
               embedding: toPgVectorString(embeddingVec),
+              client_encrypted: false,
             },
             { onConflict: "api_key_id,logical_user_id,fact_key" },
           )
@@ -183,7 +234,7 @@ export async function POST(request: NextRequest) {
 
         return finish(
           "store",
-          { fact_id: inserted.id, commitment },
+          { fact_id: inserted.id, commitment, client_encrypted: false },
           `zkshare:v1+hmac;groth16:optional:${commitment}`,
           true,
         );
@@ -199,6 +250,16 @@ export async function POST(request: NextRequest) {
 
         if (error || !fact) {
           return err(request, requestId, 404, "FACT_NOT_FOUND", "No fact found for this key and user scope");
+        }
+
+        if ((fact as { client_encrypted?: boolean }).client_encrypted) {
+          return err(
+            request,
+            requestId,
+            422,
+            "CLIENT_ENCRYPTED",
+            "This fact was client-sealed; the server cannot decrypt it. Run prove locally or use server-sealed store.",
+          );
         }
 
         let plaintext: string;
@@ -239,6 +300,16 @@ export async function POST(request: NextRequest) {
 
         if (error || !fact) {
           return err(request, requestId, 404, "FACT_NOT_FOUND", "No fact found for this key and user scope");
+        }
+
+        if ((fact as { client_encrypted?: boolean }).client_encrypted) {
+          return err(
+            request,
+            requestId,
+            422,
+            "CLIENT_ENCRYPTED",
+            "This fact was client-sealed; the server cannot decrypt it. Run share locally or use server-sealed store.",
+          );
         }
 
         let sharePlaintext: string;
@@ -309,15 +380,17 @@ export async function POST(request: NextRequest) {
             iv: String(r.iv),
             auth_tag: String(r.auth_tag ?? (r as { authTag?: string }).authTag ?? ""),
             embedding: r.embedding as RankedFactRow["embedding"],
+            client_encrypted: Boolean((r as { client_encrypted?: boolean }).client_encrypted),
             similarity: Number(r.similarity),
           }));
           results = await hydrateSearchResults({ query: input.query!, rows: ranked });
         } else {
           const { data: rows, error } = await supabase
             .from("facts")
-            .select("id, fact_key, commitment, ciphertext, iv, auth_tag, embedding")
+            .select("id, fact_key, commitment, ciphertext, iv, auth_tag, embedding, client_encrypted")
             .eq("api_key_id", keyRow.id)
-            .eq("logical_user_id", logicalUserId);
+            .eq("logical_user_id", logicalUserId)
+            .eq("client_encrypted", false);
 
           if (error) {
             return err(request, requestId, 500, "INTERNAL_ERROR", error.message);
@@ -346,6 +419,20 @@ export async function POST(request: NextRequest) {
           exec.proof_of_execution,
           exec.attestation.verified,
         );
+      }
+      case "verify_proof": {
+        const verdict = verifyZkshareProofDetailed(input.proof!.trim());
+        if (verdict.status === "malformed") {
+          return err(
+            request,
+            requestId,
+            400,
+            "VALIDATION_ERROR",
+            "Proof is not a valid zkshare proof string (expected base64url JSON envelope)",
+          );
+        }
+        const valid = verdict.status === "valid";
+        return finish("verify_proof", { valid }, input.proof!.trim(), valid);
       }
       default:
         return err(request, requestId, 400, "VALIDATION_ERROR", "Unsupported operation");

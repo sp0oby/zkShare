@@ -7,6 +7,8 @@ export const contextOperationSchema = z.enum([
   "share",
   "search",
   "enclave",
+  /** Verify an HMAC-sealed proof envelope from `prove` / `share` without reading fact plaintext. */
+  "verify_proof",
 ]);
 
 export const contextRequestSchema = z
@@ -15,16 +17,27 @@ export const contextRequestSchema = z
     user_id: z.string().min(1).max(256).optional(),
     fact_key: z.string().min(1).max(512).optional(),
     value: z.string().max(100_000).optional(),
+    /** Client-sealed store: AES-GCM parts + commitment (server never sees plaintext). */
+    ciphertext: z.string().max(500_000).optional(),
+    iv: z.string().max(512).optional(),
+    auth_tag: z.string().max(512).optional(),
+    commitment: z.string().min(8).max(4096).optional(),
+    /** `verify_proof`: base64url proof string from a prior prove/share response. */
+    proof: z.string().min(24).optional(),
     query: z.string().min(1).max(8_000).optional(),
     recipient_agent_id: z.string().min(1).max(512).optional(),
     action: z.string().min(1).max(256).optional(),
     parameters: z.record(z.string(), z.unknown()).optional(),
-    /** Optional: 1536-dim vector for semantic search. If set, the server will not call an embedding model on your fact text (reduces third-party exposure; you must use a consistent model / projection). */
+    /**
+     * 1536-dim vector (same model/projection as server `embedText`).
+     * Required for client-sealed `store` so the server never embeds labels or ciphertext.
+     * Optional for server-sealed `store` (server can embed from fact text).
+     */
     embedding: z.array(z.number()).length(1536).optional(),
   })
   .superRefine((data, ctx) => {
     switch (data.operation) {
-      case "store":
+      case "store": {
         if (!data.fact_key) {
           ctx.addIssue({
             code: z.ZodIssueCode.custom,
@@ -32,14 +45,42 @@ export const contextRequestSchema = z
             path: ["fact_key"],
           });
         }
-        if (data.value === undefined || data.value === "") {
+        const hasClientBundle = Boolean(
+          (data.ciphertext?.trim() ?? "") &&
+            (data.iv?.trim() ?? "") &&
+            (data.auth_tag?.trim() ?? "") &&
+            (data.commitment?.trim() ?? ""),
+        );
+        const hasValue = data.value !== undefined && data.value !== "";
+        if (hasClientBundle && hasValue) {
           ctx.addIssue({
             code: z.ZodIssueCode.custom,
-            message: "value is required for store",
+            message:
+              "Use either value (server-sealed) or ciphertext + iv + auth_tag + commitment (client-sealed), not both",
             path: ["value"],
           });
         }
+        if (!hasClientBundle && !hasValue) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message:
+              "Provide value for server-sealed store, or ciphertext, iv, auth_tag, and commitment for client-sealed store",
+            path: ["value"],
+          });
+        }
+        if (
+          hasClientBundle &&
+          (!data.embedding || data.embedding.length !== 1536)
+        ) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message:
+              "Client-sealed store requires embedding (1536 numbers) so the server never derives vectors from your metadata",
+            path: ["embedding"],
+          });
+        }
         break;
+      }
       case "prove":
       case "share":
         if (!data.fact_key) {
@@ -82,6 +123,15 @@ export const contextRequestSchema = z
           });
         }
         break;
+      case "verify_proof":
+        if (!data.proof?.trim()) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "proof is required for verify_proof",
+            path: ["proof"],
+          });
+        }
+        break;
       default:
         break;
     }
@@ -97,7 +147,8 @@ export type ApiErrorCode =
   | "FACT_NOT_FOUND"
   | "PROOF_FAILED"
   | "INTERNAL_ERROR"
-  | "CONFIG_ERROR";
+  | "CONFIG_ERROR"
+  | "CLIENT_ENCRYPTED";
 
 export type ContextSuccessResponse<TData = Record<string, unknown>> = {
   success: true;

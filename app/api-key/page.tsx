@@ -96,7 +96,7 @@ export default function ApiKeyPage() {
       const raw =
         e && typeof e === "object" && "message" in e && typeof (e as Error).message === "string"
           ? (e as Error).message
-          : "Something went wrong. Check Supabase Auth settings and redirect URLs.";
+          : "Sign-in could not be completed. Try again in a moment.";
       const code =
         e && typeof e === "object" && "code" in e && typeof (e as { code?: string }).code === "string"
           ? (e as { code: string }).code
@@ -107,7 +107,7 @@ export default function ApiKeyPage() {
         lower.includes("rate limit") ||
         lower.includes("too many requests");
       const msg = isRateLimited
-        ? `${raw} — Wait 1–2 minutes before trying again. Supabase limits how often magic links go to the same inbox (stricter on the built-in email provider). For dev, raise limits under Dashboard → Authentication → Rate Limits, or add custom SMTP.`
+        ? "Too many sign-in emails were sent to this address. Please wait a couple of minutes, then try again."
         : raw;
       setAuthError(msg);
     } finally {
@@ -158,11 +158,11 @@ export default function ApiKeyPage() {
             </p>
             {nextDest !== "/dashboard" ? (
               <p className="text-sm font-mono text-muted-foreground mb-12">
-                Already registered?{" "}
+                Already have an account?{" "}
                 <Link href="/api-key?flow=signin" className="text-foreground underline underline-offset-4">
-                  Sign-in magic link only
-                </Link>{" "}
-                (uses existing Supabase user; required if &quot;Create account&quot; mode didn&apos;t email you).
+                  Request a sign-in link only
+                </Link>
+                .
               </p>
             ) : null}
           </motion.div>
@@ -247,7 +247,7 @@ export default function ApiKeyPage() {
                       : mustPickAuthMode
                         ? "Choose Sign in or Create account above, then enter your email."
                         : nextDest === "/dashboard"
-                          ? "We’ll email you a one-time link. Add auth/callback to Supabase Redirect URLs if you haven’t already."
+                          ? "We’ll email you a one-time link. If it doesn’t arrive, check spam or wait a few minutes."
                           : "We will email you a magic link. After you open it, you can create an API key on this page."}
                   </p>
                   {hasSession ? (
@@ -265,11 +265,6 @@ export default function ApiKeyPage() {
                 {authError ? (
                   <p className="text-sm font-mono text-destructive border border-destructive/30 p-4 bg-destructive/5">
                     {authError}
-                    <span className="block text-xs text-muted-foreground mt-2 font-sans">
-                      Tip: &quot;Sign in&quot; with <span className="font-mono">shouldCreateUser: false</span> will not
-                      email unknown addresses — use &quot;Create account&quot; for a new email. Supabase also rate-limits
-                      magic links; wait a minute before resending.
-                    </span>
                   </p>
                 ) : null}
 
@@ -283,8 +278,8 @@ export default function ApiKeyPage() {
                       </>
                     ) : (
                       <>
-                        Check your inbox for the link. After opening it, return here and use{" "}
-                        <span className="text-foreground">Generate API key</span> if you still need a key.
+                        Check your inbox and open the magic link. When you come back here signed in, use{" "}
+                        <span className="text-foreground">Generate API Key</span>.
                       </>
                     )}
                   </p>
@@ -314,7 +309,7 @@ export default function ApiKeyPage() {
                 <p className="text-xs text-center text-muted-foreground">
                   {hasSession
                     ? "API keys are hashed at rest. By creating a key you agree to the terms of service."
-                    : "Magic link sign-in via Supabase. By continuing you agree to our terms of service."}
+                    : "Email magic link sign-in. By continuing you agree to our terms of service."}
                 </p>
               </div>
             </motion.div>

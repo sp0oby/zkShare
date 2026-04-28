@@ -51,25 +51,49 @@ export function buildProofPayload(input: {
   return { proof, verified: true };
 }
 
-export function verifyProofString(proofB64: string): boolean {
+/** Malformed = not decodable / wrong shape; invalid = well-formed envelope but bad HMAC or version. */
+export type ZkshareProofVerification =
+  | { status: "valid" }
+  | { status: "invalid" }
+  | { status: "malformed" };
+
+export function verifyZkshareProofDetailed(proofB64: string): ZkshareProofVerification {
   try {
     const raw = Buffer.from(proofB64, "base64url").toString("utf8");
     const body = JSON.parse(raw) as {
-      v: string;
-      fact_id: string;
-      c: string;
-      q: string;
-      a: string;
-      n: string;
-      sig: string;
+      v?: unknown;
+      fact_id?: unknown;
+      c?: unknown;
+      q?: unknown;
+      a?: unknown;
+      n?: unknown;
+      sig?: unknown;
     };
+    if (
+      typeof body.v !== "string" ||
+      typeof body.fact_id !== "string" ||
+      typeof body.c !== "string" ||
+      typeof body.q !== "string" ||
+      typeof body.a !== "string" ||
+      typeof body.n !== "string" ||
+      typeof body.sig !== "string"
+    ) {
+      return { status: "malformed" };
+    }
     const { sig, ...rest } = body;
     const canonical = JSON.stringify(rest);
     const expected = createHmac("sha256", proofSecret()).update(canonical).digest("base64url");
-    return sig === expected && body.v === VERSION;
+    if (sig !== expected || body.v !== VERSION) {
+      return { status: "invalid" };
+    }
+    return { status: "valid" };
   } catch {
-    return false;
+    return { status: "malformed" };
   }
+}
+
+export function verifyProofString(proofB64: string): boolean {
+  return verifyZkshareProofDetailed(proofB64).status === "valid";
 }
 
 /** Lightweight NL yes/no from plaintext — external LLM sees fact text unless disabled (see ZKSHARE_DISABLE_EXTERNAL_LLM). */

@@ -3,7 +3,7 @@
   "info": {
     "title": "ZKshare API",
     "version": "1.0.0",
-    "description": "ZKshare — MCP-native + REST. Operations: store, prove, share, search, enclave. Tiers: Free 1k ops/mo, Starter $19 / 20k, Pro $49 / 100k + audit export, Enterprise custom. Metered overages via Stripe ($0.005–$0.02/op typical)."
+    "description": "ZKshare — MCP-native + REST. Operations: store (server-sealed or client-sealed ciphertext bundle), prove, share, search, verify_proof, enclave. Tiers: Free 1k ops/mo, Starter $19 / 20k, Pro $49 / 100k + audit export, Enterprise custom. Metered overages via Stripe ($0.005–$0.02/op typical)."
   },
   "servers": [{ "url": "/", "description": "Same origin as Next.js app" }],
   "paths": {
@@ -63,6 +63,14 @@
           },
           "413": {
             "description": "Payload too large",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ContextError" }
+              }
+            }
+          },
+          "422": {
+            "description": "Client-sealed fact cannot be processed server-side (e.g. prove/share)",
             "content": {
               "application/json": {
                 "schema": { "$ref": "#/components/schemas/ContextError" }
@@ -155,11 +163,28 @@
         "properties": {
           "operation": {
             "type": "string",
-            "enum": ["store", "prove", "share", "search", "enclave"]
+            "enum": ["store", "prove", "share", "search", "enclave", "verify_proof"]
           },
           "user_id": { "type": "string", "description": "Logical user scope (recommended)" },
           "fact_key": { "type": "string" },
-          "value": { "type": "string", "description": "Plaintext for store only; encrypted server-side" },
+          "value": {
+            "type": "string",
+            "description": "For store: plaintext when using server-side sealing (mutually exclusive with ciphertext bundle)"
+          },
+          "ciphertext": {
+            "type": "string",
+            "description": "For store (client-sealed): AES-GCM ciphertext (base64 or opaque string as stored)"
+          },
+          "iv": { "type": "string", "description": "For store (client-sealed): AES-GCM IV/nonce" },
+          "auth_tag": { "type": "string", "description": "For store (client-sealed): AES-GCM auth tag" },
+          "commitment": {
+            "type": "string",
+            "description": "For store (client-sealed): commitment string (same scheme as server-sealed facts)"
+          },
+          "proof": {
+            "type": "string",
+            "description": "For verify_proof: base64url proof string from a prior prove or share response"
+          },
           "query": { "type": "string" },
           "recipient_agent_id": { "type": "string" },
           "action": { "type": "string" },
@@ -169,7 +194,7 @@
             "items": { "type": "number" },
             "minItems": 1536,
             "maxItems": 1536,
-            "description": "Optional for store: client-supplied 1536-dim vector; skips server embedding RPC for this fact"
+            "description": "Required for client-sealed store (server must not derive embeddings). Optional for server-sealed store (skips server embed call when set). Use the same 1536-dim model/projection as the platform embedding pipeline."
           }
         }
       },
@@ -207,7 +232,9 @@
               "VALIDATION_ERROR",
               "FACT_NOT_FOUND",
               "PROOF_FAILED",
-              "INTERNAL_ERROR"
+              "INTERNAL_ERROR",
+              "CONFIG_ERROR",
+              "CLIENT_ENCRYPTED"
             ]
           },
           "message": { "type": "string" }

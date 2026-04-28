@@ -12,6 +12,8 @@ export type FactSearchRow = {
   iv: string;
   auth_tag: string;
   embedding: string | number[] | null;
+  /** When true, ciphertext was sealed on the client; server must not decrypt for summaries. */
+  client_encrypted?: boolean;
 };
 
 export type RankedFactRow = FactSearchRow & { similarity?: number };
@@ -81,6 +83,16 @@ export async function hydrateSearchResults(input: {
   const top = input.rows.slice(0, 8);
   const out: { fact_key: string; relevance: number; answer: string }[] = [];
   for (const row of top) {
+    if (row.client_encrypted) {
+      const rel = Math.round((row.similarity ?? 0) * 1000) / 1000;
+      out.push({
+        fact_key: row.fact_key,
+        relevance: rel,
+        answer:
+          "Client-sealed fact — answer is not available from the server. Decrypt locally if you need details.",
+      });
+      continue;
+    }
     const plain = decryptFactRow(row as unknown as Record<string, unknown>);
     const answer = await summarizeMatch(input.query, plain);
     const rel = Math.round((row.similarity ?? 0) * 1000) / 1000;
@@ -96,6 +108,7 @@ export async function semanticSearchOverFacts(input: {
   const qVec = await embedText(input.query);
   const scored: { row: FactSearchRow; score: number }[] = [];
   for (const row of input.rows) {
+    if (row.client_encrypted) continue;
     const ev = parseEmbedding(row.embedding);
     if (ev && ev.length === qVec.length) {
       scored.push({ row, score: cosine(qVec, ev) });

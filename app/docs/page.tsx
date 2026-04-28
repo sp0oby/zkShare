@@ -20,7 +20,9 @@ const sections = [
 - Run sensitive operations inside confidential compute enclaves
 - Perform advanced semantic search over private context
 
-Even a fully compromised agent can only request proofs it has permission for — raw data stays encrypted and inaccessible.`,
+Even a fully compromised agent can only request proofs it has permission for — raw data stays encrypted and inaccessible.
+
+**Client-sealed (E2EE) facts:** you can store ciphertext + commitment only; the service never sees plaintext. Those facts are excluded from server-side semantic search and from prove/share (use local crypto + verify_proof for receipts). **Server-sealed facts** support full search and prove flows; embeddings are derived on the server unless you supply \`embedding\`.`,
   },
   {
     id: "authentication",
@@ -44,7 +46,8 @@ The \`operation\` field in the request body determines the action.`,
 const operations = [
   {
     name: "store",
-    description: "Store an encrypted fact with semantic embedding",
+    description:
+      "Store an encrypted fact. Server-sealed: send value. Client-sealed: send ciphertext + iv + auth_tag + commitment + required 1536-dim embedding (no plaintext on the wire).",
     request: `{
   "operation": "store",
   "user_id": "user_123",
@@ -54,8 +57,8 @@ const operations = [
     response: `{
   "success": true,
   "operation": "store",
-  "data": { "fact_id": "uuid", "commitment": "0x…" },
-  "proof": "snarkjs:pending:0x…",
+  "data": { "fact_id": "uuid", "commitment": "0x…", "client_encrypted": false },
+  "proof": "zkshare:v1+hmac;…",
   "verified": true,
   "timestamp": "2026-04-28T12:00:00Z",
   "usage": { "calls": 42, "limit": 1000 }
@@ -105,8 +108,27 @@ const operations = [
 }`,
   },
   {
+    name: "verify_proof",
+    description:
+      "Verify an HMAC-sealed proof from prove/share without loading fact plaintext. Malformed proof strings return 400; valid envelope with bad signature returns 200 with data.valid false.",
+    request: `{
+  "operation": "verify_proof",
+  "proof": "base64url-envelope-from-prove-or-share…"
+}`,
+    response: `{
+  "success": true,
+  "operation": "verify_proof",
+  "data": { "valid": true },
+  "proof": "…same proof echoed…",
+  "verified": true,
+  "timestamp": "2026-04-28T12:00:00Z",
+  "usage": { "calls": 47, "limit": 1000 }
+}`,
+  },
+  {
     name: "search",
-    description: "Semantic search over private facts (embeddings)",
+    description:
+      "Semantic search over server-sealed facts only. Client-sealed rows are not ranked or summarized on the server.",
     request: `{
   "operation": "search",
   "user_id": "user_123",
@@ -397,10 +419,20 @@ export default function DocsPage() {
                     <td className="p-4 text-muted-foreground">404</td>
                     <td className="p-4 text-muted-foreground">Referenced fact does not exist</td>
                   </tr>
-                  <tr>
+                  <tr className="border-b border-foreground/10">
                     <td className="p-4 font-mono text-xs">PROOF_FAILED</td>
                     <td className="p-4 text-muted-foreground">400</td>
                     <td className="p-4 text-muted-foreground">Unable to generate proof for claim</td>
+                  </tr>
+                  <tr className="border-b border-foreground/10">
+                    <td className="p-4 font-mono text-xs">CLIENT_ENCRYPTED</td>
+                    <td className="p-4 text-muted-foreground">422</td>
+                    <td className="p-4 text-muted-foreground">Fact is client-sealed; prove/share need local decryption</td>
+                  </tr>
+                  <tr>
+                    <td className="p-4 font-mono text-xs">VALIDATION_ERROR</td>
+                    <td className="p-4 text-muted-foreground">400</td>
+                    <td className="p-4 text-muted-foreground">Invalid request (schema, missing fields, malformed proof string, …)</td>
                   </tr>
                 </tbody>
               </table>

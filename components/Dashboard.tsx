@@ -255,7 +255,7 @@ export function Dashboard() {
                 <CardContent className="pt-6 space-y-3 text-sm text-muted-foreground">
                   <p>Keys are hashed at rest. Raw values are never returned from `/api/v1/context`.</p>
                   <p className="font-mono text-xs border border-foreground/10 p-3 bg-foreground/[0.02]">
-                    Revoke compromised keys instantly in Supabase or add a revoke endpoint when you&apos;re ready.
+                    Revoke compromised keys from your account as soon as you notice unusual usage.
                   </p>
                 </CardContent>
               </Card>
@@ -275,8 +275,8 @@ export function Dashboard() {
                     Plan & billing
                   </CardTitle>
                   <CardDescription>
-                    Upgrade in one click while signed in. Uses Stripe Checkout; limits update automatically after
-                    payment (webhook). Configure <span className="font-mono">STRIPE_PRICE_*</span> in production.
+                    Upgrade in one click while signed in. Checkout is handled by Stripe; your plan limits update after
+                    payment completes.
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="pt-6 space-y-4">
@@ -320,9 +320,7 @@ export function Dashboard() {
                     ) : null}
                   </div>
                   <p className="text-xs font-mono text-muted-foreground">
-                    Local dev: set <span className="text-foreground">STRIPE_SECRET_KEY</span>, price IDs, webhook to{" "}
-                    <span className="text-foreground">/api/webhooks/stripe</span>, and enable the Customer Portal in
-                    Stripe Dashboard.
+                    Manage payment methods and invoices from the billing portal when your plan is active.
                   </p>
                 </CardContent>
               </Card>
