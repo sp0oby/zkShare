@@ -56,8 +56,30 @@ export async function validateApiKey(rawKey: string | null): Promise<ApiKeyRow |
     }
   }
 
-  if (row.calls_this_month >= row.monthly_limit) return null;
+  const accountUsage = await getAccountUsage(supabase, row.user_id);
+  if (accountUsage >= row.monthly_limit) return null;
+
   return row;
+}
+
+async function getAccountUsage(
+  supabase: ReturnType<typeof createSupabaseServiceRoleClient>,
+  userId: string | null,
+): Promise<number> {
+  if (!userId) return 0;
+  const { data } = await supabase
+    .from("api_keys")
+    .select("calls_this_month")
+    .eq("user_id", userId)
+    .is("revoked_at", null);
+  if (!data || data.length === 0) return 0;
+  return data.reduce((sum, r) => sum + ((r.calls_this_month as number) ?? 0), 0);
+}
+
+export async function getAccountUsageForUser(userId: string | null): Promise<number> {
+  if (!userId) return 0;
+  const supabase = createSupabaseServiceRoleClient();
+  return getAccountUsage(supabase, userId);
 }
 
 export async function incrementApiKeyUsage(id: string) {

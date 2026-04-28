@@ -2,7 +2,7 @@ import { randomBytes, randomUUID } from "crypto";
 import { NextResponse, type NextRequest } from "next/server";
 import { contextRequestSchema } from "@/types";
 import type { ApiErrorCode, ContextOperation } from "@/types";
-import { validateApiKey, incrementApiKeyUsage } from "@/lib/api-key";
+import { validateApiKey, incrementApiKeyUsage, getAccountUsageForUser } from "@/lib/api-key";
 import { rateLimitOrThrow, RATE_LIMIT_RETRY_AFTER_SEC } from "@/lib/rate-limit";
 import { writeAuditLog } from "@/lib/audit";
 import { createSupabaseServiceRoleClient } from "@/lib/supabase-server";
@@ -169,9 +169,9 @@ export async function POST(request: NextRequest) {
       logicalUserId,
       payload: { operation, request_id: requestId },
     });
-    const calls = keyRow.calls_this_month + 1;
+    const accountCalls = await getAccountUsageForUser(keyRow.user_id);
     return ok(request, requestId, operation, data, proof, verified, {
-      calls,
+      calls: accountCalls,
       limit: keyRow.monthly_limit,
     });
   };

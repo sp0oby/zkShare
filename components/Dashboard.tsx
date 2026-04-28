@@ -1,7 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { ArrowLeft, Copy, Check, KeyRound, Activity, Shield, CreditCard, Ban } from "lucide-react";
 import {
@@ -134,17 +135,26 @@ export function Dashboard() {
     window.location.href = "/api-key";
   };
 
-  const primary = keys[0];
-  const isEnterpriseCap = primary && primary.monthly_limit >= 999_999_000;
+  const searchParams = useSearchParams();
+  const billingResult = searchParams.get("billing");
+
+  const activeKeys = useMemo(() => keys.filter((k) => !k.revoked_at), [keys]);
+  const accountCalls = useMemo(
+    () => activeKeys.reduce((sum, k) => sum + k.calls_this_month, 0),
+    [activeKeys],
+  );
+  const primary = activeKeys[0] ?? keys[0];
+  const accountLimit = primary?.monthly_limit ?? PRICING.free.operationsPerMonth;
+  const isEnterpriseCap = accountLimit >= 999_999_000;
   const progressPct =
     primary && !isEnterpriseCap
-      ? Math.min(100, (primary.calls_this_month / primary.monthly_limit) * 100)
+      ? Math.min(100, (accountCalls / accountLimit) * 100)
       : primary
         ? 100
         : 0;
   const tierLabel = primary?.plan_tier ?? "free";
   const canExportAudit = tierLabel === "pro" || tierLabel === "enterprise";
-  const hasStripeCustomer = Boolean(primary?.stripe_customer_id);
+  const hasStripeCustomer = activeKeys.some((k) => k.stripe_customer_id);
   const showStarterUpgrade = tierLabel === "free";
   const showProUpgrade = tierLabel === "free" || tierLabel === "starter";
 
@@ -224,14 +234,14 @@ export function Dashboard() {
                       <div className="flex items-center justify-between gap-4">
                         <div>
                           <p className="text-xs font-mono text-muted-foreground uppercase tracking-wide">
-                            Calls this month
+                            Account usage this month
                           </p>
                           <p className="text-3xl font-semibold tabular-nums">
-                            {primary.calls_this_month}
+                            {accountCalls.toLocaleString()}
                             <span className="text-muted-foreground text-lg font-normal">
                               {" "}
                               /{" "}
-                              {isEnterpriseCap ? "∞" : primary.monthly_limit.toLocaleString()}
+                              {isEnterpriseCap ? "∞" : accountLimit.toLocaleString()}
                             </span>
                           </p>
                         </div>
@@ -240,7 +250,7 @@ export function Dashboard() {
                             {tierLabel}
                           </Badge>
                           <Badge variant="outline" className="rounded-none font-mono border-foreground/20">
-                            {primary.revoked_at ? "Revoked" : "Active"}
+                            {activeKeys.length} active key{activeKeys.length !== 1 ? "s" : ""}
                           </Badge>
                         </div>
                       </div>
@@ -252,7 +262,7 @@ export function Dashboard() {
                         </p>
                       )}
                       <p className="text-xs font-mono text-muted-foreground">
-                        Prefix <span className="text-foreground">{primary.key_prefix}…</span> · period{" "}
+                        Shared across all keys on your account · period{" "}
                         {primary.billing_period_start}
                       </p>
                     </>
@@ -332,7 +342,7 @@ export function Dashboard() {
                             </Badge>
                           </div>
                           <p className="text-xs font-mono text-muted-foreground mt-1">
-                            {k.calls_this_month.toLocaleString()} / {k.monthly_limit >= 999_999_000 ? "∞" : k.monthly_limit.toLocaleString()} calls
+                            {k.calls_this_month.toLocaleString()} calls this month
                             {k.revoked_at ? ` · revoked ${new Date(k.revoked_at).toLocaleDateString()}` : ""}
                           </p>
                         </div>
@@ -398,6 +408,15 @@ export function Dashboard() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="pt-6 space-y-4">
+                  {billingResult === "success" ? (
+                    <p className="text-sm font-mono border border-foreground/20 p-3 bg-foreground/[0.02]">
+                      Payment successful. Your plan limits will update shortly.
+                    </p>
+                  ) : billingResult === "cancel" ? (
+                    <p className="text-sm font-mono text-muted-foreground border border-foreground/10 p-3 bg-foreground/[0.02]">
+                      Checkout was cancelled. No changes were made.
+                    </p>
+                  ) : null}
                   {billingMsg ? (
                     <p className="text-sm font-mono text-destructive border border-destructive/30 p-3 bg-destructive/5">
                       {billingMsg}
@@ -426,19 +445,32 @@ export function Dashboard() {
                       </Button>
                     ) : null}
                     {hasStripeCustomer ? (
-                      <Button
-                        type="button"
-                        variant="secondary"
-                        className="font-mono rounded-none"
-                        disabled={billingBusy}
-                        onClick={() => void openBillingPortal()}
-                      >
-                        Manage billing
-                      </Button>
+                      <>
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          className="font-mono rounded-none"
+                          disabled={billingBusy}
+                          onClick={() => void openBillingPortal()}
+                        >
+                          Manage billing
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className="font-mono rounded-none border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                          disabled={billingBusy}
+                          onClick={() => void openBillingPortal()}
+                        >
+                          Cancel subscription
+                        </Button>
+                      </>
                     ) : null}
                   </div>
                   <p className="text-xs font-mono text-muted-foreground">
-                    Manage payment methods and invoices from the billing portal when your plan is active.
+                    {hasStripeCustomer
+                      ? "Manage payment methods, switch plans, or cancel your subscription from the Stripe billing portal."
+                      : "Subscribe to a paid plan to increase your monthly operation limit."}
                   </p>
                 </CardContent>
               </Card>
