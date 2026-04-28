@@ -25,7 +25,7 @@ export function openRouterDenyDataCollection(): boolean {
 export function chatModelId(): string {
   if (llmRouting() === "openrouter") {
     return (
-      process.env.OPENROUTER_CHAT_MODEL?.trim() || "google/gemma-2-9b-it:free"
+      process.env.OPENROUTER_CHAT_MODEL?.trim() || "google/gemma-3-27b-it:free"
     );
   }
   return process.env.OPENAI_CHAT_MODEL?.trim() || "gpt-4o-mini";

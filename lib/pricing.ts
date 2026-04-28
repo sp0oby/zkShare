@@ -16,7 +16,7 @@ export const PRICING = {
     monthlyUsd: 19,
     operationsPerMonth: 20_000,
     requestsPerSecond: 30,
-    highlights: ["Higher rate limits", "Email support"],
+    highlights: ["Higher rate limits", "Chat support"],
   },
   pro: {
     label: "Pro",

@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { ArrowLeft, ArrowRight } from "lucide-react";
@@ -7,6 +8,178 @@ import { CodeBlock } from "@/components/code-block";
 import { Navbar } from "@/components/navbar";
 import { GridBackground } from "@/components/grid-background";
 import { PRICING, OVERAGE_USD_PER_OP_MIN, OVERAGE_USD_PER_OP_MAX } from "@/lib/pricing";
+
+/* ─── Quick-start snippets ─── */
+
+const QUICK_START_CURL = `# 1. Store a fact
+curl -X POST https://zkshare.dev/api/v1/context \\
+  -H "x-api-key: YOUR_API_KEY" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "operation": "store",
+    "user_id": "user_123",
+    "fact_key": "vacation_preference",
+    "value": "strongly prefers beach vacations"
+  }'
+
+# 2. Prove a property without revealing the fact
+curl -X POST https://zkshare.dev/api/v1/context \\
+  -H "x-api-key: YOUR_API_KEY" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "operation": "prove",
+    "user_id": "user_123",
+    "fact_key": "vacation_preference",
+    "query": "does the user prefer beach vacations?"
+  }'
+
+# 3. Verify the proof (anyone can do this — no plaintext needed)
+curl -X POST https://zkshare.dev/api/v1/context \\
+  -H "x-api-key: YOUR_API_KEY" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "operation": "verify_proof",
+    "proof": "PROOF_STRING_FROM_STEP_2"
+  }'`;
+
+const QUICK_START_JS = `const API = "https://zkshare.dev/api/v1/context";
+const KEY = "YOUR_API_KEY";
+
+async function zkshare(body) {
+  const res = await fetch(API, {
+    method: "POST",
+    headers: { "x-api-key": KEY, "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  return res.json();
+}
+
+// 1. Store a fact
+const stored = await zkshare({
+  operation: "store",
+  user_id: "user_123",
+  fact_key: "vacation_preference",
+  value: "strongly prefers beach vacations",
+});
+console.log("Commitment:", stored.data.commitment);
+
+// 2. Prove a property (server answers yes/no, signs it)
+const proved = await zkshare({
+  operation: "prove",
+  user_id: "user_123",
+  fact_key: "vacation_preference",
+  query: "does the user prefer beach vacations?",
+});
+console.log("Answer:", proved.data.answer); // "yes"
+console.log("Proof:", proved.proof);
+
+// 3. Verify the proof (no plaintext involved)
+const verified = await zkshare({
+  operation: "verify_proof",
+  proof: proved.proof,
+});
+console.log("Valid:", verified.data.valid); // true`;
+
+const QUICK_START_PYTHON = `import requests
+
+API = "https://zkshare.dev/api/v1/context"
+HEADERS = {
+    "x-api-key": "YOUR_API_KEY",
+    "Content-Type": "application/json",
+}
+
+def zkshare(body):
+    return requests.post(API, json=body, headers=HEADERS).json()
+
+# 1. Store a fact
+stored = zkshare({
+    "operation": "store",
+    "user_id": "user_123",
+    "fact_key": "vacation_preference",
+    "value": "strongly prefers beach vacations",
+})
+print("Commitment:", stored["data"]["commitment"])
+
+# 2. Prove a property (server answers yes/no, signs it)
+proved = zkshare({
+    "operation": "prove",
+    "user_id": "user_123",
+    "fact_key": "vacation_preference",
+    "query": "does the user prefer beach vacations?",
+})
+print("Answer:", proved["data"]["answer"])  # "yes"
+
+# 3. Verify the proof (no plaintext involved)
+verified = zkshare({
+    "operation": "verify_proof",
+    "proof": proved["proof"],
+})
+print("Valid:", verified["data"]["valid"])  # True`;
+
+const QUICK_START_AGENT = `// OpenAI function-calling — give your agent a "zkshare" tool
+import OpenAI from "openai";
+
+const openai = new OpenAI();
+const ZK_API = "https://zkshare.dev/api/v1/context";
+const ZK_KEY = "YOUR_API_KEY";
+
+// Define ZKshare as a tool the agent can call
+const tools = [
+  {
+    type: "function",
+    function: {
+      name: "zkshare",
+      description:
+        "Privacy API. Store encrypted facts, prove properties " +
+        "without revealing data, share answers, or search.",
+      parameters: {
+        type: "object",
+        properties: {
+          operation: {
+            type: "string",
+            enum: ["store", "prove", "share", "search", "verify_proof", "sandbox"],
+          },
+          user_id:  { type: "string" },
+          fact_key: { type: "string" },
+          value:    { type: "string" },
+          query:    { type: "string" },
+        },
+        required: ["operation"],
+      },
+    },
+  },
+];
+
+// When the model calls the tool, forward to ZKshare
+async function handleToolCall(call) {
+  const args = JSON.parse(call.function.arguments);
+  const res = await fetch(ZK_API, {
+    method: "POST",
+    headers: { "x-api-key": ZK_KEY, "Content-Type": "application/json" },
+    body: JSON.stringify(args),
+  });
+  return res.json();
+}
+
+// Run the agent
+const response = await openai.chat.completions.create({
+  model: "gpt-4o",
+  tools,
+  messages: [
+    { role: "system", content: "You have access to a privacy API via zkshare." },
+    { role: "user", content: "Store that I prefer beach vacations, then prove it." },
+  ],
+});
+
+// The agent will call zkshare("store") then zkshare("prove") automatically`;
+
+type QuickStartLang = "curl" | "javascript" | "python";
+
+const quickStartSnippets: Record<QuickStartLang, string> = {
+  curl: QUICK_START_CURL,
+  javascript: QUICK_START_JS,
+  python: QUICK_START_PYTHON,
+};
 
 const sections = [
   {
@@ -216,6 +389,66 @@ const operations = [
   },
 ];
 
+function QuickStartSection() {
+  const [lang, setLang] = useState<QuickStartLang>("javascript");
+  const langs: { key: QuickStartLang; label: string }[] = [
+    { key: "javascript", label: "JavaScript" },
+    { key: "python", label: "Python" },
+    { key: "curl", label: "curl" },
+  ];
+
+  return (
+    <motion.section
+      id="quick-start"
+      initial={{ opacity: 0, y: 20 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+      viewport={{ once: true }}
+      className="mb-16"
+    >
+      <h2 className="text-2xl font-semibold tracking-tight mb-2 border-b border-foreground/10 pb-4">
+        Quick Start — working in 30 seconds
+      </h2>
+      <p className="text-muted-foreground text-sm mb-6">
+        Three calls: <strong className="text-foreground">store</strong> a fact,{" "}
+        <strong className="text-foreground">prove</strong> a property about it
+        without revealing the fact, and{" "}
+        <strong className="text-foreground">verify</strong> the proof. Replace{" "}
+        <code className="text-foreground">YOUR_API_KEY</code> with your key from
+        the{" "}
+        <Link
+          href="/api-key"
+          className="text-foreground underline underline-offset-2"
+        >
+          dashboard
+        </Link>
+        .
+      </p>
+      <div className="flex gap-1 mb-4">
+        {langs.map((l) => (
+          <button
+            key={l.key}
+            type="button"
+            onClick={() => setLang(l.key)}
+            className={`px-4 py-2 text-xs font-mono transition-colors border ${
+              lang === l.key
+                ? "bg-foreground text-background border-foreground"
+                : "bg-transparent text-muted-foreground border-foreground/10 hover:border-foreground/30"
+            }`}
+          >
+            {l.label}
+          </button>
+        ))}
+      </div>
+      <CodeBlock
+        code={quickStartSnippets[lang]}
+        language={lang}
+        title={`${langs.find((l) => l.key === lang)!.label} — store → prove → verify`}
+      />
+    </motion.section>
+  );
+}
+
 export default function DocsPage() {
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -254,6 +487,18 @@ export default function DocsPage() {
           >
             <h2 className="font-mono font-semibold mb-4">Contents</h2>
             <nav className="space-y-2">
+              <a
+                href="#quick-start"
+                className="block text-sm text-foreground font-semibold hover:text-foreground transition-colors font-mono"
+              >
+                Quick Start — working in 30 seconds
+              </a>
+              <a
+                href="#agent-integration"
+                className="block text-sm text-muted-foreground hover:text-foreground transition-colors font-mono"
+              >
+                Agent Integration
+              </a>
               {sections.map((section) => (
                 <a
                   key={section.id}
@@ -292,6 +537,33 @@ export default function DocsPage() {
               </a>
             </nav>
           </motion.div>
+
+          {/* Quick Start */}
+          <QuickStartSection />
+
+          {/* Agent Integration */}
+          <motion.section
+            id="agent-integration"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            viewport={{ once: true }}
+            className="mb-16"
+          >
+            <h2 className="text-2xl font-semibold tracking-tight mb-4 border-b border-foreground/10 pb-4">
+              Agent Integration
+            </h2>
+            <div className="prose prose-neutral max-w-none mb-6">
+              <pre className="whitespace-pre-wrap text-muted-foreground leading-relaxed font-sans text-base">
+{`ZKshare works as a tool for any AI agent framework. Register it as a function the agent can call — the agent decides when to store, prove, or search based on user intent.
+
+The example below uses OpenAI function-calling, but the pattern is the same for LangChain, CrewAI, Vercel AI SDK, or any framework that supports tool/function definitions: describe the operations as a JSON schema, and forward calls to the single POST endpoint.
+
+Your agent only needs the API key. No SDKs, no extra dependencies.`}
+              </pre>
+            </div>
+            <CodeBlock code={QUICK_START_AGENT} language="javascript" title="OpenAI Function-Calling Example" />
+          </motion.section>
 
           {/* Sections */}
           {sections.map((section, index) => (

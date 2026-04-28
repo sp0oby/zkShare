@@ -110,34 +110,59 @@ export async function answerYesNoFromPlaintext(
   if (!client) {
     return heuristicYesNo(query, plaintext);
   }
-  const completion = await client.chat.completions.create({
-    model: chatModelId(),
-    temperature: 0,
-    max_tokens: 8,
-    messages: [
-      {
-        role: "system",
-        content:
-          'Given PRIVATE_FACT and QUESTION, reply with exactly one word: yes, no, or unknown. No punctuation.',
-      },
-      {
-        role: "user",
-        content: `QUESTION: ${query}\nPRIVATE_FACT: ${plaintext.slice(0, 8000)}`,
-      },
-    ],
-  });
-  const text = completion.choices[0]?.message?.content?.trim().toLowerCase() ?? "";
-  if (text.startsWith("yes")) return "yes";
-  if (text.startsWith("no")) return "no";
-  return "unknown";
+  try {
+    const completion = await client.chat.completions.create({
+      model: chatModelId(),
+      temperature: 0,
+      max_tokens: 8,
+      messages: [
+        {
+          role: "system",
+          content:
+            'Given PRIVATE_FACT and QUESTION, reply with exactly one word: yes, no, or unknown. No punctuation.',
+        },
+        {
+          role: "user",
+          content: `QUESTION: ${query}\nPRIVATE_FACT: ${plaintext.slice(0, 8000)}`,
+        },
+      ],
+    });
+    const text = completion.choices[0]?.message?.content?.trim().toLowerCase() ?? "";
+    if (text.startsWith("yes")) return "yes";
+    if (text.startsWith("no")) return "no";
+    return "unknown";
+  } catch {
+    return heuristicYesNo(query, plaintext);
+  }
 }
 
+/**
+ * Keyword-based fallback when the LLM provider is unavailable.
+ * Extracts noun phrases from the query and checks for presence in the value.
+ */
 function heuristicYesNo(query: string, value: string): "yes" | "no" | "unknown" {
-  const q = query.toLowerCase();
+  const q = query.toLowerCase().replace(/[?.,!]/g, "");
   const v = value.toLowerCase();
-  if (q.includes("prefer") && (q.includes("beach") || q.includes("mountain"))) {
-    if (v.includes("beach") && !v.includes("mountain")) return "yes";
-    if (v.includes("mountain") && !v.includes("beach")) return "no";
-  }
+
+  const stopWords = new Set([
+    "is", "the", "a", "an", "does", "do", "did", "was", "were", "are", "has",
+    "have", "had", "can", "could", "will", "would", "should", "user", "users",
+    "their", "they", "them", "this", "that", "what", "which", "who", "whom",
+    "my", "your", "his", "her", "its", "our", "it", "of", "in", "on", "at",
+    "to", "for", "with", "from", "by", "about", "like", "than", "or", "and",
+    "not", "no", "yes", "favorite", "favourite", "prefer", "preferred",
+    "color", "colour", "called", "named",
+  ]);
+
+  const keywords = q
+    .split(/\s+/)
+    .map((w) => w.replace(/'s$/, ""))
+    .filter((w) => w.length > 2 && !stopWords.has(w));
+
+  if (keywords.length === 0) return "unknown";
+
+  const matchCount = keywords.filter((kw) => v.includes(kw)).length;
+  if (matchCount >= Math.max(1, Math.ceil(keywords.length * 0.5))) return "yes";
+  if (matchCount === 0 && keywords.length >= 1) return "no";
   return "unknown";
 }

@@ -33,19 +33,23 @@ export async function embedText(text: string): Promise<number[]> {
 
   const model = embeddingModelId();
 
-  const providerOpts = embeddingProviderOptions();
-  const res = await client.embeddings.create({
-    model,
-    input: text.slice(0, 8000),
-    ...providerOpts,
-  } as Parameters<typeof client.embeddings.create>[0]);
+  try {
+    const providerOpts = embeddingProviderOptions();
+    const res = await client.embeddings.create({
+      model,
+      input: text.slice(0, 8000),
+      ...providerOpts,
+    } as Parameters<typeof client.embeddings.create>[0]);
 
-  const vec = res.data[0]?.embedding;
-  if (!vec?.length) {
-    throw new Error("Unexpected empty embedding from provider");
+    const vec = res.data[0]?.embedding;
+    if (!vec?.length) {
+      throw new Error("Unexpected empty embedding from provider");
+    }
+
+    return projectEmbeddingToDb(vec as number[], DB_EMBEDDING_DIM);
+  } catch {
+    return deterministicPseudoEmbedding(text, DB_EMBEDDING_DIM);
   }
-
-  return projectEmbeddingToDb(vec as number[], DB_EMBEDDING_DIM);
 }
 
 /** Literal for Postgres `vector(1536)` columns (Supabase). */

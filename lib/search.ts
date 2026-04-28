@@ -56,23 +56,27 @@ async function summarizeMatch(query: string, plaintext: string): Promise<string>
     await answerYesNoFromPlaintext(query, plaintext);
     return "Related match (paraphrased for privacy).";
   }
-  const completion = await client.chat.completions.create({
-    model: chatModelId(),
-    temperature: 0,
-    max_tokens: 64,
-    messages: [
-      {
-        role: "system",
-        content:
-          "Summarize how PRIVATE_FACT relates to QUERY in one short sentence. Never quote the fact verbatim; paraphrase.",
-      },
-      {
-        role: "user",
-        content: `QUERY: ${query}\nPRIVATE_FACT: ${plaintext.slice(0, 4000)}`,
-      },
-    ],
-  });
-  return completion.choices[0]?.message?.content?.trim() ?? "Match found.";
+  try {
+    const completion = await client.chat.completions.create({
+      model: chatModelId(),
+      temperature: 0,
+      max_tokens: 64,
+      messages: [
+        {
+          role: "system",
+          content:
+            "Summarize how PRIVATE_FACT relates to QUERY in one short sentence. Never quote the fact verbatim; paraphrase.",
+        },
+        {
+          role: "user",
+          content: `QUERY: ${query}\nPRIVATE_FACT: ${plaintext.slice(0, 4000)}`,
+        },
+      ],
+    });
+    return completion.choices[0]?.message?.content?.trim() ?? "Match found.";
+  } catch {
+    return "Related match (summarization temporarily unavailable).";
+  }
 }
 
 /** pgvector RPC already ranked rows — hydrate answers only (production path). */

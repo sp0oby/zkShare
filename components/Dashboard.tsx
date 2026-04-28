@@ -153,7 +153,9 @@ export function Dashboard() {
         ? 100
         : 0;
   const tierLabel = primary?.plan_tier ?? "free";
-  const canExportAudit = tierLabel === "pro" || tierLabel === "enterprise";
+  const canExportAudit = activeKeys.some(
+    (k) => k.plan_tier === "pro" || k.plan_tier === "enterprise",
+  );
   const hasStripeCustomer = activeKeys.some((k) => k.stripe_customer_id);
   const showStarterUpgrade = tierLabel === "free";
   const showProUpgrade = tierLabel === "free" || tierLabel === "starter";
