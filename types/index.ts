@@ -6,7 +6,7 @@ export const contextOperationSchema = z.enum([
   "prove",
   "share",
   "search",
-  "enclave",
+  "sandbox",
   /** Verify an HMAC-sealed proof envelope from `prove` / `share` without reading fact plaintext. */
   "verify_proof",
 ]);
@@ -114,11 +114,11 @@ export const contextRequestSchema = z
           });
         }
         break;
-      case "enclave":
+      case "sandbox":
         if (!data.action) {
           ctx.addIssue({
             code: z.ZodIssueCode.custom,
-            message: "action is required for enclave",
+            message: "action is required for sandbox",
             path: ["action"],
           });
         }

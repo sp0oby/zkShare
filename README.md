@@ -3,7 +3,7 @@
 Privacy-oriented context API for users, AI agents, and back-office systems. A single HTTP entrypoint
 (`POST /api/v1/context`) handles **encrypted fact storage**, **commitment-based proof envelopes**,
 **semantic search over encrypted data**, **end-to-end-encrypted (client-sealed) facts**, and a
-**simulated isolated execution path** for sensitive computations. The implementation is a Next.js
+**isolated sandbox execution** for sensitive computations. The implementation is a Next.js
 (App Router) application backed by PostgreSQL with `pgvector`.
 
 This document is for developers integrating against the API and operators self-hosting the service.
@@ -50,7 +50,7 @@ controls.
 | `share` | Same as `prove`, plus inserts a row into `share_tokens` (recipient_agent_id, expiry, proof) and returns a `share_token`. The token is a 24-byte base64url string, valid for seven days. |
 | `search` | Embeds the query, calls `match_facts` (a `security definer` SQL function with cosine distance over `pgvector`), and returns ranked summaries for **server-sealed rows only**. Client-sealed rows are excluded at the SQL level **and** the application level. |
 | `verify_proof` | Validates an envelope without loading any fact. Malformed envelope returns `400 / VALIDATION_ERROR`; well-formed envelope with a bad HMAC returns `200` with `data.valid: false`. |
-| `enclave` | Executes a small allow-listed function inside an isolated `node:vm` sandbox and returns the result with attestation metadata and a short-lived HS256 JWT (`proof_of_execution`). The current implementation is a **WASM-class simulation** intended to be replaced with a real TEE provider; the response shape is stable across that swap. |
+| `sandbox` | Executes a small allow-listed function inside an isolated `node:vm` sandbox (no host I/O, 50 ms timeout) and returns the result with attestation metadata and a short-lived HS256 JWT (`proof_of_execution`). Every response advertises `provider: "vm-sandbox"` — this is software isolation, not hardware attestation. |
 
 Authoritative request and response shapes live in [`types/index.ts`](./types/index.ts) and
 [`openapi.json`](./openapi.json).
@@ -95,7 +95,7 @@ Authoritative request and response shapes live in [`types/index.ts`](./types/ind
     32 characters).
   - `ZKSHARE_PROOF_SECRET` — HMAC secret for commitments and proof envelopes (minimum 16
     characters).
-  - `ZKSHARE_ENCLAVE_JWT_SECRET` — HS256 secret for enclave attestations (minimum 32 characters).
+  - `ZKSHARE_ENCLAVE_JWT_SECRET` — HS256 secret for sandbox attestations (minimum 32 characters).
   - All three are required for the relevant code paths. The application throws on startup if any
     are missing or too short.
 
@@ -106,7 +106,7 @@ Authoritative request and response shapes live in [`types/index.ts`](./types/ind
 | Path | Purpose |
 |------|---------|
 | `app/` | Next.js App Router routes — public site, dashboard, API endpoints (`api/v1/context`, `api/keys`, `api/billing`, `api/webhooks/stripe`, `api/health`, `api/health/ready`, `api/audit/export`, `auth/callback`). |
-| `lib/` | Server-only modules: `encryption.ts`, `zk.ts`, `embeddings.ts`, `search.ts`, `enclave.ts`, `api-key.ts`, `rate-limit.ts`, `audit.ts`, `llm-client.ts`, `supabase-server.ts`, `supabase-browser.ts`. |
+| `lib/` | Server-only modules: `encryption.ts`, `zk.ts`, `embeddings.ts`, `search.ts`, `sandbox.ts`, `api-key.ts`, `rate-limit.ts`, `audit.ts`, `llm-client.ts`, `supabase-server.ts`, `supabase-browser.ts`. |
 | `components/` | UI components built on shadcn/ui primitives. |
 | `types/index.ts` | Zod request schema, operation enum, error codes, and shared row types. |
 | `supabase/migrations/` | Ordered SQL migrations. |

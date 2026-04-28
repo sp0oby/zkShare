@@ -6,26 +6,66 @@ import './globals.css'
 const _geist = Geist({ subsets: ["latin"] });
 const _geistMono = Geist_Mono({ subsets: ["latin"] });
 
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://zkshare.dev";
+
 export const metadata: Metadata = {
-  title: 'ZKshare - Zero-Knowledge Context Sharing',
-  description: 'Zero-knowledge context sharing for AI agents and humans. Private by design. Generate real ZK proofs, share verifiable insights, and run semantic search over encrypted data.',
-  generator: 'v0.app',
-  icons: {
-    icon: [
+  metadataBase: new URL(SITE_URL),
+  title: {
+    default: "ZKshare — Privacy-oriented context API",
+    template: "%s | ZKshare",
+  },
+  description:
+    "Store encrypted facts, prove properties without revealing them, and share verifiable answers between agents — through a single API endpoint. AES-256-GCM encryption, HMAC proof envelopes, pgvector search, and an end-to-end-encrypted path.",
+  keywords: [
+    "privacy API",
+    "zero-knowledge",
+    "encrypted context",
+    "AI agents",
+    "proof envelopes",
+    "semantic search",
+    "pgvector",
+    "end-to-end encryption",
+    "HMAC",
+    "AES-256-GCM",
+  ],
+  authors: [{ name: "sp0obs" }],
+  creator: "sp0obs",
+  openGraph: {
+    type: "website",
+    locale: "en_US",
+    url: SITE_URL,
+    siteName: "ZKshare",
+    title: "ZKshare — Privacy-oriented context API",
+    description:
+      "Store encrypted facts, prove properties without revealing them, and share verifiable answers between agents — through a single endpoint.",
+    images: [
       {
-        url: '/icon-light-32x32.png',
-        media: '(prefers-color-scheme: light)',
-      },
-      {
-        url: '/icon-dark-32x32.png',
-        media: '(prefers-color-scheme: dark)',
-      },
-      {
-        url: '/icon.svg',
-        type: 'image/svg+xml',
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "ZKshare — Privacy-oriented context API",
       },
     ],
-    apple: '/apple-icon.png',
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "ZKshare — Privacy-oriented context API",
+    description:
+      "Encrypted facts, signed proof envelopes, semantic search over encrypted data, and E2EE storage. One endpoint, six operations.",
+    images: ["/og-image.png"],
+  },
+  icons: {
+    icon: [
+      { url: "/icon.svg", type: "image/svg+xml" },
+    ],
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+    },
   },
 }
 

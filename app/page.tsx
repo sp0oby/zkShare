@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import Link from "next/link";
+import Script from "next/script";
 import { ArrowRight, Lock, Zap, Shield, Search, Box, Key } from "lucide-react";
 import { GridBackground } from "@/components/grid-background";
 import { ZKVisualizer } from "@/components/zk-visualizer";
@@ -9,6 +10,23 @@ import { CodeBlock } from "@/components/code-block";
 import { FeatureCard } from "@/components/feature-card";
 import { Navbar } from "@/components/navbar";
 import { PRICING, OVERAGE_USD_PER_OP_MIN, OVERAGE_USD_PER_OP_MAX } from "@/lib/pricing";
+
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  name: "ZKshare",
+  applicationCategory: "DeveloperApplication",
+  operatingSystem: "Any",
+  description:
+    "Privacy-oriented context API. Store encrypted facts, prove properties without revealing them, and share verifiable answers between agents through a single endpoint.",
+  url: "https://zkshare.dev",
+  offers: {
+    "@type": "Offer",
+    price: "0",
+    priceCurrency: "USD",
+    description: "Free tier: 1,000 operations/month",
+  },
+};
 
 const features = [
   {
@@ -44,7 +62,7 @@ const features = [
   {
     title: "One endpoint, six operations",
     description:
-      "store, prove, share, search, verify_proof, and enclave — all through a single POST. OpenAPI 3.1 spec is checked into the repo.",
+      "store, prove, share, search, verify_proof, and sandbox — all through a single POST. OpenAPI 3.1 spec is checked into the repo.",
     icon: <Key className="w-5 h-5" />,
   },
 ];
@@ -72,6 +90,11 @@ const responseExample = `{
 export default function Home() {
   return (
     <div className="min-h-screen bg-background text-foreground">
+      <Script
+        id="json-ld"
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <GridBackground />
       <Navbar />
 
@@ -246,12 +269,12 @@ export default function Home() {
             className="mb-16 text-center"
           >
             <h2 className="text-3xl font-semibold tracking-tight mb-4">
-              One endpoint. Five operations.
+              One endpoint. Six operations.
             </h2>
             <p className="text-muted-foreground max-w-2xl mx-auto">
               Store encrypted facts, generate proofs, share with other agents,
-              run semantic search, and execute in confidential compute. All
-              through a single API.
+              run semantic search, verify proof envelopes, and execute in an
+              isolated sandbox. All through a single API.
             </p>
           </motion.div>
 
@@ -314,7 +337,7 @@ export default function Home() {
               { op: "share", desc: "Time-bound share tokens" },
               { op: "search", desc: "Semantic vector search" },
               { op: "verify_proof", desc: "Validate without plaintext" },
-              { op: "enclave", desc: "Isolated execution" },
+              { op: "sandbox", desc: "Isolated execution" },
             ].map((item, i) => (
               <motion.div
                 key={item.op}
@@ -379,8 +402,14 @@ export default function Home() {
             <Link href="/api-key" className="hover:text-foreground transition-colors">
               API Key
             </Link>
+            <Link href="/terms" className="hover:text-foreground transition-colors">
+              Terms
+            </Link>
+            <Link href="/privacy" className="hover:text-foreground transition-colors">
+              Privacy
+            </Link>
             <a
-              href="https://github.com"
+              href="https://github.com/sp0oby/zkShare"
               target="_blank"
               rel="noopener noreferrer"
               className="hover:text-foreground transition-colors"

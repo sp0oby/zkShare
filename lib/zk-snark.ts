@@ -12,7 +12,7 @@ import "server-only";
  * const { proof, publicSignals } = await snarkjs.groth16.fullProve(input, wasm, zkey);
  * ```
  *
- * AWS Nitro / other TEE hooks belong in `lib/enclave.ts`, not here.
+ * AWS Nitro / other TEE hooks belong in `lib/sandbox.ts`, not here.
  */
 export async function loadSnarkjs(): Promise<typeof import("snarkjs")> {
   return import("snarkjs");

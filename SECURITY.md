@@ -59,9 +59,9 @@ test against accounts you do not own.
   plaintext for **server-sealed** facts only; client-sealed rows are not searchable on the
   server. Encrypted search (FHE, structured encryption) is an active research area and is
   not promised here.
-- Hardware-attested confidential compute. The `enclave` operation runs inside an isolated
-  `node:vm` sandbox and produces signed attestation metadata; replace with a real TEE provider
-  (AWS Nitro, Azure Confidential VMs, Intel TDX, etc.) before relying on hardware attestation.
+- Hardware-attested confidential compute. The `sandbox` operation runs inside an isolated
+  `node:vm` sandbox and produces signed attestation metadata (`provider: "vm-sandbox"`).
+  This is software isolation — not hardware attestation.
 - Groth16 / SNARK verification on every response. `snarkjs` is a dependency and `circuits/`
   documents the intended path; the default trust path today is the HMAC envelope.
 
@@ -75,7 +75,7 @@ The minimum bar for exposing zkShare to the public internet:
 
 | Area | Requirement |
 |------|-------------|
-| Secrets | `ZKSHARE_ENCRYPTION_SECRET` (≥ 32 chars), `ZKSHARE_PROOF_SECRET` (≥ 16 chars), and `ZKSHARE_ENCLAVE_JWT_SECRET` (≥ 32 chars) are set with high-entropy values. The application throws on startup if any are missing or too short. |
+| Secrets | `ZKSHARE_ENCRYPTION_SECRET` (≥ 32 chars), `ZKSHARE_PROOF_SECRET` (≥ 16 chars), and `ZKSHARE_ENCLAVE_JWT_SECRET` (≥ 32 chars, used for sandbox attestation JWTs) are set with high-entropy values. The application throws on startup if any are missing or too short. |
 | Secret management | Secrets live in your platform's secret manager (Vercel env, AWS Secrets Manager, GCP Secret Manager, or equivalent). Preview and production environments use different values. |
 | Rotation | Rotate every secret on a documented cadence (180 days minimum) and immediately on suspected compromise. Rotating `ZKSHARE_ENCRYPTION_SECRET` requires a key-migration plan because existing ciphertext was sealed under the previous key. |
 | Network | `ZKSHARE_CORS_ORIGIN` is an explicit comma-separated allow list of origins (e.g. `https://app.example.com,https://docs.example.com`). `*` is allowed only for unauthenticated demos. |
@@ -137,7 +137,7 @@ mode with client-supplied embeddings.
 | 2. Strict LLM mode | Yes | No fact text is sent to any external chat model. Embedding calls can be removed by supplying `embedding`. |
 | 3. End-to-end encryption (client-sealed `store`) | Yes | Server never sees plaintext or labels. Excluded from `prove`, `share`, and server-side `search`. |
 | 4. Verify-only API (Groth16 / SNARK) | No | Tracked under `circuits/`. Intended path: clients produce SNARKs locally; server verifies without the witness. |
-| 5. Hardware-attested TEE | No | Current `enclave` is a `node:vm` simulation. Replace with a real TEE provider before relying on hardware attestation. |
+| 5. Hardware-attested TEE | No | Current `sandbox` is a `node:vm` sandbox (`provider: "vm-sandbox"`). Software isolation only. |
 | 6. Search on ciphertext | No | Active research area; not implemented. |
 
 Operators should advertise only the tiers they have configured and audited.

@@ -3,40 +3,38 @@ import vm from "node:vm";
 import { SignJWT } from "jose";
 import "server-only";
 
-export type EnclaveAttestation = {
-  enclave_id: string;
+export type SandboxAttestation = {
+  sandbox_id: string;
   measurement: string;
   timestamp: string;
-  provider: "wasm-simulation";
+  provider: "vm-sandbox";
   verified: boolean;
   public_key?: string;
 };
 
-export type EnclaveResult = {
+export type SandboxResult = {
   success: true;
   result: Record<string, unknown>;
-  attestation: EnclaveAttestation;
+  attestation: SandboxAttestation;
   proof_of_execution: string;
 };
 
 /**
- * v1.0: WASM-class **simulation** (isolated `node:vm` — no host I/O). This is production-acceptable
- * for launch when paired with rich attestation metadata (`provider: "wasm-simulation"`).
- *
- * v1.1: Plug in a real TEE vendor here, e.g. `callAwsNitroEnclave(payload)` or Secretarium —
- * keep returning `{ result, attestation, proof_of_execution }` so `/api/v1/context` clients stay stable.
+ * Isolated `node:vm` sandbox — no host I/O, 50 ms timeout, allow-listed actions only.
+ * Returns a signed HS256 JWT as proof of execution. Every response advertises
+ * `provider: "vm-sandbox"` so callers know this is software isolation.
  */
-export async function simulateEnclave(input: {
+export async function runSandbox(input: {
   action: string;
   parameters: Record<string, unknown>;
   userId?: string;
-}): Promise<EnclaveResult> {
+}): Promise<SandboxResult> {
   const codeHash = createHash("sha256")
-    .update(`zkshare-enclave-v1:${input.action}`)
+    .update(`zkshare-sandbox-v1:${input.action}`)
     .digest("hex");
-  const enclaveId = `zkshare-enclave-v1-${randomUUID().slice(0, 8)}`;
+  const sandboxId = `zkshare-sandbox-v1-${randomUUID().slice(0, 8)}`;
 
-  const sandbox: Record<string, unknown> = {
+  const ctx: Record<string, unknown> = {
     action: input.action,
     parameters: input.parameters,
     userId: input.userId ?? null,
@@ -86,22 +84,22 @@ export async function simulateEnclave(input: {
     })();
   `);
 
-  const ctx = vm.createContext(sandbox);
-  const raw = script.runInContext(ctx, { timeout: 50 });
+  const vmCtx = vm.createContext(ctx);
+  const raw = script.runInContext(vmCtx, { timeout: 50 });
 
   const resultPayload =
     raw && typeof raw === "object" && "ok" in raw && (raw as { ok: boolean }).ok
       ? ((raw as { data: Record<string, unknown> }).data ?? {})
       : {
-          error: "ENCLAVE_ACTION_FAILED",
+          error: "SANDBOX_ACTION_FAILED",
           detail: raw,
         };
 
-  const attestation: EnclaveAttestation = {
-    enclave_id: enclaveId,
+  const attestation: SandboxAttestation = {
+    sandbox_id: sandboxId,
     measurement: `sha256:${codeHash}`,
     timestamp: new Date().toISOString(),
-    provider: "wasm-simulation",
+    provider: "vm-sandbox",
     verified: true,
     public_key: process.env.ZKSHARE_ENCLAVE_PUBLIC_KEY_STUB ?? "dev-local-stub",
   };
@@ -109,12 +107,12 @@ export async function simulateEnclave(input: {
   const secretValue = process.env.ZKSHARE_ENCLAVE_JWT_SECRET;
   if (!secretValue || secretValue.length < 32) {
     throw new Error(
-      "ZKSHARE_ENCLAVE_JWT_SECRET must be set (min 32 chars) to sign enclave attestations",
+      "ZKSHARE_ENCLAVE_JWT_SECRET must be set (min 32 chars) to sign sandbox attestations",
     );
   }
   const secret = new TextEncoder().encode(secretValue);
   const proof_of_execution = await new SignJWT({
-    sub: enclaveId,
+    sub: sandboxId,
     action: input.action,
     measurement: attestation.measurement,
   })

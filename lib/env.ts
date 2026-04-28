@@ -30,7 +30,7 @@ const CRYPTO_SECRETS: RequiredSecretSpec[] = [
   {
     name: "ZKSHARE_ENCLAVE_JWT_SECRET",
     minLength: 32,
-    description: "HS256 secret for enclave attestation JWTs",
+    description: "HS256 secret for sandbox attestation JWTs",
   },
 ];
 

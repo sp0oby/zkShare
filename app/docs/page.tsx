@@ -20,7 +20,7 @@ A single HTTP entrypoint exposes six operations:
 - share      — same as prove, plus a single-use, time-bound share token
 - search     — semantic search over server-sealed facts (pgvector)
 - verify_proof — validate a previously issued envelope without loading plaintext
-- enclave    — execute a small allow-listed action inside an isolated sandbox
+- sandbox    — execute a small allow-listed action inside an isolated VM
 
 Server-sealed facts: the server holds the AES-256-GCM key (\`ZKSHARE_ENCRYPTION_SECRET\`) and decrypts in memory only when you call prove, share, or generate a search summary. Client-sealed facts: the server only sees ciphertext, IV, auth tag, commitment, and your supplied 1536-dim embedding. Client-sealed rows are excluded from server-side search, prove, and share — use local crypto plus verify_proof.
 
@@ -29,8 +29,8 @@ Today\u2019s proof field is a versioned JSON envelope signed with HMAC-SHA256 (c
   {
     id: "authentication",
     title: "Authentication",
-    content: `All API requests require an API key passed in the \`x-api-key\` header.`,
-    code: `curl -X POST https://api.zkshare.dev/v1/context \\
+    content: `All API requests require an API key passed in the \`x-api-key\` header. End users and agents only need this key — no LLM provider account, no Supabase login, no sandbox keys. Those are operator-side concerns (see "What you bring vs. what we run" below).`,
+    code: `curl -X POST https://api.zkshare.dev/api/v1/context \\
   -H "x-api-key: zk_live_abc123" \\
   -H "Content-Type: application/json"`,
   },
@@ -42,6 +42,36 @@ Today\u2019s proof field is a versioned JSON envelope signed with HMAC-SHA256 (c
 \`POST /api/v1/context\`
 
 The \`operation\` field in the request body determines the action.`,
+  },
+  {
+    id: "responsibilities",
+    title: "What you bring vs. what we run",
+    content: `End user / agent — only needs the ZKshare API key (\`x-api-key: zk_live_…\`). No other credentials, no LLM account, no extra SDK.
+
+Operator (the team running this API) — configures cryptographic secrets, the database, and optionally an LLM provider used internally for two things:
+- generating 1536-dim embeddings for semantic search
+- deciding yes/no answers to natural-language predicates inside prove and share
+
+The end user never sees an LLM key, never sends one, and never needs one. If the operator sets \`ZKSHARE_DISABLE_EXTERNAL_LLM=true\`, no third-party LLM is contacted at all; prove/share answers fall back to a deterministic heuristic and search summaries are static. This is the most private mode but also the least intelligent.
+
+For client-sealed (E2EE) stores, no LLM ever touches your data: the server only stores the ciphertext, IV, auth tag, commitment, and the embedding you supply. Use this mode when you do not want any third party to see plaintext.`,
+  },
+  {
+    id: "trust-model",
+    title: "Trust model and the ZK claim",
+    content: `Be exact about what is verifiable today vs. what is on the roadmap.
+
+Today (v1.0):
+- AES-256-GCM encryption at rest. The operator holds the key for server-sealed rows; the client holds the key for client-sealed rows.
+- HMAC-SHA256 proof envelopes binding (commitment, query, answer, nonce, expires_at). \`verify_proof\` checks the signature without loading plaintext.
+- Deterministic salted SHA-256 commitments per (user_id, fact_key, value).
+- Sandboxed action execution via \`node:vm\` with a signed HS256 JWT attestation. Every response advertises \`provider: "vm-sandbox"\` so callers know this is software isolation, not hardware.
+
+Roadmap:
+- Groth16 SNARKs for structured predicates (equality, range, set membership, commitment-knowledge). Natural-language predicates cannot be SNARK-proven and will continue to use HMAC envelopes — the response will gain a \`proof_type\` field so callers can require \`groth16\` when they need it.
+- Real TEE provider (AWS Nitro Enclaves or equivalent) replacing the vm-sandbox. The response shape (\`attestation.provider\`, \`proof_of_execution\`) is stable across that swap.
+
+Treat any external claim of "full SNARK-on-every-call" or "hardware-attested enclave" as aspirational unless the verifier and circuit artifacts have been published and audited. The current implementation is honestly described in every response.`,
   },
 ];
 
@@ -153,11 +183,11 @@ const operations = [
 }`,
   },
   {
-    name: "enclave",
+    name: "sandbox",
     description:
-      "Run a small allow-listed action inside an isolated VM sandbox; returns the result with attestation metadata and a short-lived HS256 JWT. Replace with a real TEE provider before relying on hardware attestation.",
+      "Run a small allow-listed action inside an isolated node:vm sandbox (no host I/O, 50 ms timeout). Returns the result with attestation metadata and a short-lived HS256 JWT. Every response advertises provider: vm-sandbox — this is software isolation, not hardware attestation.",
     request: `{
-  "operation": "enclave",
+  "operation": "sandbox",
   "user_id": "user_123",
   "action": "calculate_travel_budget",
   "parameters": {
@@ -168,13 +198,13 @@ const operations = [
 }`,
     response: `{
   "success": true,
-  "operation": "enclave",
+  "operation": "sandbox",
   "data": {
     "result": { "recommended_budget": 4500, "affordable": true },
     "attestation": {
-      "enclave_id": "zkshare-enclave-v1-…",
+      "sandbox_id": "zkshare-sandbox-v1-…",
       "measurement": "sha256:…",
-      "provider": "wasm-simulation",
+      "provider": "vm-sandbox",
       "verified": true
     }
   },

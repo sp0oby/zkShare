@@ -15,7 +15,7 @@ import {
 } from "@/lib/zk";
 import { DB_EMBEDDING_DIM, embedText, projectEmbeddingToDb, toPgVectorString } from "@/lib/embeddings";
 import { decryptFactRow } from "@/lib/encryption";
-import { simulateEnclave } from "@/lib/enclave";
+import { runSandbox } from "@/lib/sandbox";
 import { semanticSearchOverFacts, hydrateSearchResults, type RankedFactRow } from "@/lib/search";
 import { logError } from "@/lib/logger";
 import { assertCryptoSecrets, assertSupabaseConfig } from "@/lib/env";
@@ -438,14 +438,14 @@ export async function POST(request: NextRequest) {
 
         return finish("search", { results }, null, true);
       }
-      case "enclave": {
-        const exec = await simulateEnclave({
+      case "sandbox": {
+        const exec = await runSandbox({
           action: input.action!,
           parameters: input.parameters ?? {},
           userId: logicalUserId || undefined,
         });
         return finish(
-          "enclave",
+          "sandbox",
           {
             result: exec.result,
             attestation: exec.attestation,

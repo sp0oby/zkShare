@@ -23,4 +23,4 @@ Place outputs where the app can load them (e.g. `public/zk/commit.wasm`, `public
 
 ## v1.1
 
-For **real TEE** attestation alongside ZK, see comments in `lib/enclave.ts` (e.g. AWS Nitro Enclaves).
+For **real TEE** attestation alongside ZK, see comments in `lib/sandbox.ts` (e.g. AWS Nitro Enclaves).

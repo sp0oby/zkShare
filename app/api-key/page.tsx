@@ -308,8 +308,8 @@ export default function ApiKeyPage() {
 
                 <p className="text-xs text-center text-muted-foreground">
                   {hasSession
-                    ? "API keys are hashed at rest. By creating a key you agree to the terms of service."
-                    : "Email magic link sign-in. By continuing you agree to our terms of service."}
+                    ? <>API keys are hashed at rest. By creating a key you agree to our <Link href="/terms" className="underline underline-offset-2 hover:text-foreground">Terms of Service</Link> and <Link href="/privacy" className="underline underline-offset-2 hover:text-foreground">Privacy Policy</Link>.</>
+                    : <>By continuing you agree to our <Link href="/terms" className="underline underline-offset-2 hover:text-foreground">Terms of Service</Link> and <Link href="/privacy" className="underline underline-offset-2 hover:text-foreground">Privacy Policy</Link>.</>}
                 </p>
               </div>
             </motion.div>

@@ -30,7 +30,7 @@ export const PRICING = {
     monthlyUsd: null as number | null,
     operationsPerMonth: null as number | null, // unlimited / contract
     requestsPerSecond: null as number | null, // SLA / custom
-    highlights: ["Unlimited ops (contract)", "SLA", "Dedicated enclave / real TEE path", "SOC 2 alignment support"],
+    highlights: ["Unlimited ops (contract)", "SLA", "Dedicated sandbox / custom integrations", "SOC 2 alignment support"],
   },
 } as const;
 

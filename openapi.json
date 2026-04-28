@@ -3,7 +3,7 @@
   "info": {
     "title": "ZKshare API",
     "version": "1.0.0",
-    "description": "ZKshare — MCP-native + REST. Operations: store (server-sealed or client-sealed ciphertext bundle), prove, share, search, verify_proof, enclave. Tiers: Free 1k ops/mo, Starter $19 / 20k, Pro $49 / 100k + audit export, Enterprise custom. Metered overages via Stripe ($0.005–$0.02/op typical)."
+    "description": "ZKshare — MCP-native + REST. Operations: store (server-sealed or client-sealed ciphertext bundle), prove, share, search, verify_proof, sandbox. Tiers: Free 1k ops/mo, Starter $19 / 20k, Pro $49 / 100k + audit export, Enterprise custom. Metered overages via Stripe ($0.005–$0.02/op typical)."
   },
   "servers": [{ "url": "/", "description": "Same origin as Next.js app" }],
   "paths": {
@@ -163,7 +163,7 @@
         "properties": {
           "operation": {
             "type": "string",
-            "enum": ["store", "prove", "share", "search", "enclave", "verify_proof"]
+            "enum": ["store", "prove", "share", "search", "sandbox", "verify_proof"]
           },
           "user_id": { "type": "string", "description": "Logical user scope (recommended)" },
           "fact_key": { "type": "string" },

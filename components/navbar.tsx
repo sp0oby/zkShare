@@ -73,7 +73,7 @@ export function Navbar() {
             Get API Key
           </Link>
           <a
-            href="https://github.com"
+            href="https://github.com/sp0oby/zkShare"
             target="_blank"
             rel="noopener noreferrer"
             className="text-sm font-mono tracking-wide text-muted-foreground hover:text-foreground transition-colors"
