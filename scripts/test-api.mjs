@@ -1,5 +1,8 @@
-const API = "http://localhost:3000/api/v1/context";
-const KEY = "zk_live_zmHXzzX44XCnfOwkxhuSV9kUlQKOMuQ8";
+const BASE =
+  process.env.TEST_BASE_URL?.trim().replace(/\/$/, "") || "http://localhost:3000";
+const API = `${BASE}/api/v1/context`;
+/** Export ZKSHARE_TEST_API_KEY in the shell for authenticated tests (against any base URL). */
+const KEY = process.env.ZKSHARE_TEST_API_KEY?.trim() || "";
 
 let passed = 0;
 let failed = 0;
@@ -67,16 +70,25 @@ async function callRaw(label, opts, expectStatus) {
 }
 
 async function main() {
+  if (!KEY) {
+    console.error(`
+Missing ZKSHARE_TEST_API_KEY.
+
+Example (PowerShell):
+
+  $env:TEST_BASE_URL=\"https://zkshare.io\"; $env:ZKSHARE_TEST_API_KEY=\"zk_live_YOUR_KEY\"; node scripts/test-api.mjs
+
+`);
+    process.exit(1);
+  }
+  console.log(`Target: ${BASE}`);
   console.log("=".repeat(60));
   console.log("ZKshare API — Full Test Suite");
-  console.log("=".repeat(60));
-
-  // ─── Health ───
   console.log("\n--- HEALTH ---");
 
   process.stdout.write(`\n[1] GET /api/health ... `);
   {
-    const r = await fetch("http://localhost:3000/api/health");
+    const r = await fetch(`${BASE}/api/health`);
     const j = await r.json();
     if (r.status === 200 && j.ok) { console.log("PASS"); passed++; }
     else { console.log("FAIL"); console.log(j); failed++; }
@@ -84,7 +96,7 @@ async function main() {
 
   process.stdout.write(`\n[2] GET /api/health/ready ... `);
   {
-    const r = await fetch("http://localhost:3000/api/health/ready");
+    const r = await fetch(`${BASE}/api/health/ready`);
     const j = await r.json();
     if (r.status === 200 && j.ok && j.database) { console.log("PASS"); passed++; }
     else { console.log("FAIL"); console.log(j); failed++; }
