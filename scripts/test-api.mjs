@@ -394,7 +394,7 @@ async function main() {
 
   process.stdout.write(`\n[${passed + failed + skipped + 1}] OPTIONS preflight → 204 ... `);
   {
-    const r = await fetch(API, { method: "OPTIONS", headers: { Origin: "https://zkshare.dev" } });
+    const r = await fetch(API, { method: "OPTIONS", headers: { Origin: "https://zkshare.io" } });
     if (r.status === 204) { console.log("PASS"); passed++; }
     else { console.log(`FAIL (got ${r.status})`); failed++; }
   }

@@ -1,7 +1,7 @@
 import type { MetadataRoute } from "next";
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://zkshare.dev";
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://zkshare.io";
   const now = new Date().toISOString();
 
   return [

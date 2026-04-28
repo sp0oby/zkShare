@@ -19,7 +19,7 @@ const jsonLd = {
   operatingSystem: "Any",
   description:
     "Privacy-oriented context API. Store encrypted facts, prove properties without revealing them, and share verifiable answers between agents through a single endpoint.",
-  url: "https://zkshare.dev",
+  url: "https://zkshare.io",
   offers: {
     "@type": "Offer",
     price: "0",
@@ -67,7 +67,7 @@ const features = [
   },
 ];
 
-const apiExample = `curl -X POST https://api.zkshare.dev/api/v1/context \\
+const apiExample = `curl -X POST https://zkshare.io/api/v1/context \\
   -H "x-api-key: your_api_key" \\
   -H "Content-Type: application/json" \\
   -d '{

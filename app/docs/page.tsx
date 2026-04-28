@@ -12,7 +12,7 @@ import { PRICING, OVERAGE_USD_PER_OP_MIN, OVERAGE_USD_PER_OP_MAX } from "@/lib/p
 /* ─── Quick-start snippets ─── */
 
 const QUICK_START_CURL = `# 1. Store a fact
-curl -X POST https://zkshare.dev/api/v1/context \\
+curl -X POST https://zkshare.io/api/v1/context \\
   -H "x-api-key: YOUR_API_KEY" \\
   -H "Content-Type: application/json" \\
   -d '{
@@ -23,7 +23,7 @@ curl -X POST https://zkshare.dev/api/v1/context \\
   }'
 
 # 2. Prove a property without revealing the fact
-curl -X POST https://zkshare.dev/api/v1/context \\
+curl -X POST https://zkshare.io/api/v1/context \\
   -H "x-api-key: YOUR_API_KEY" \\
   -H "Content-Type: application/json" \\
   -d '{
@@ -34,7 +34,7 @@ curl -X POST https://zkshare.dev/api/v1/context \\
   }'
 
 # 3. Verify the proof (anyone can do this — no plaintext needed)
-curl -X POST https://zkshare.dev/api/v1/context \\
+curl -X POST https://zkshare.io/api/v1/context \\
   -H "x-api-key: YOUR_API_KEY" \\
   -H "Content-Type: application/json" \\
   -d '{
@@ -42,7 +42,7 @@ curl -X POST https://zkshare.dev/api/v1/context \\
     "proof": "PROOF_STRING_FROM_STEP_2"
   }'`;
 
-const QUICK_START_JS = `const API = "https://zkshare.dev/api/v1/context";
+const QUICK_START_JS = `const API = "https://zkshare.io/api/v1/context";
 const KEY = "YOUR_API_KEY";
 
 async function zkshare(body) {
@@ -82,7 +82,7 @@ console.log("Valid:", verified.data.valid); // true`;
 
 const QUICK_START_PYTHON = `import requests
 
-API = "https://zkshare.dev/api/v1/context"
+API = "https://zkshare.io/api/v1/context"
 HEADERS = {
     "x-api-key": "YOUR_API_KEY",
     "Content-Type": "application/json",
@@ -120,7 +120,7 @@ const QUICK_START_AGENT = `// OpenAI function-calling — give your agent a "zks
 import OpenAI from "openai";
 
 const openai = new OpenAI();
-const ZK_API = "https://zkshare.dev/api/v1/context";
+const ZK_API = "https://zkshare.io/api/v1/context";
 const ZK_KEY = "YOUR_API_KEY";
 
 // Define ZKshare as a tool the agent can call
@@ -203,7 +203,7 @@ Today\u2019s proof field is a versioned JSON envelope signed with HMAC-SHA256 (c
     id: "authentication",
     title: "Authentication",
     content: `All API requests require an API key passed in the \`x-api-key\` header. End users and agents only need this key — no LLM provider account, no Supabase login, no sandbox keys. Those are operator-side concerns (see "What you bring vs. what we run" below).`,
-    code: `curl -X POST https://api.zkshare.dev/api/v1/context \\
+    code: `curl -X POST https://zkshare.io/api/v1/context \\
   -H "x-api-key: zk_live_abc123" \\
   -H "Content-Type: application/json"`,
   },
