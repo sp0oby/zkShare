@@ -1,31 +1,102 @@
 # zkShare
 
-Monorepo for a **single HTTP entrypoint** (`POST /api/v1/context`) that stores **encrypted facts**, runs **semantic search** (pgvector), issues **HMAC-sealed proof envelopes** for yes/no answers, and supports an **optional client-sealed (E2EE) store** where the server never sees plaintext. The app is a **Next.js** (App Router) deployment with **Supabase** (Postgres + Auth); rate limits and billing integrations are optional operational layers.
+Privacy-oriented context API for users, AI agents, and back-office systems. A single HTTP entrypoint
+(`POST /api/v1/context`) handles **encrypted fact storage**, **commitment-based proof envelopes**,
+**semantic search over encrypted data**, **end-to-end-encrypted (client-sealed) facts**, and a
+**simulated isolated execution path** for sensitive computations. The implementation is a Next.js
+(App Router) application backed by PostgreSQL with `pgvector`.
 
-This README is written for **operators and integrators** (self-host or audit), not as product marketing.
+This document is for developers integrating against the API and operators self-hosting the service.
+It is **not** a marketing brochure — pricing tiers, dashboards, and billing are optional layers
+defined separately in the application code.
 
 ---
 
-## Behavior (API contract)
+## Privacy and security model
 
-| Operation | Role |
-|-----------|------|
-| `store` | **Server-sealed:** `value` is encrypted server-side; embedding from model or client-supplied `embedding` (1536 dims). **Client-sealed:** caller sends `ciphertext`, `iv`, `auth_tag`, `commitment`, and **required** `embedding`; server persists blobs only (`client_encrypted = true`). |
-| `prove` / `share` | Load a **server-sealable** fact, decrypt in process, derive yes/no (LLM or heuristics — see `SECURITY.md`), return signed proof. **Client-sealed facts** return `422` / `CLIENT_ENCRYPTED`. |
-| `search` | Embeds the query server-side, calls `match_facts` RPC. **Only** rows with `client_encrypted = false` participate (no server-side ranking of E2EE ciphertext). |
-| `verify_proof` | Validates a proof string **without** reading fact plaintext. Malformed envelope → `400`; wrong HMAC → `200` with `data.valid: false`. |
-| `enclave` | Simulated WASM “enclave” path with JWT-style execution attestation (see `lib/enclave.ts`). |
+The platform is designed around three trust boundaries:
 
-Authoritative request/response shapes: [`types/index.ts`](./types/index.ts), [`openapi.json`](./openapi.json).
+| Boundary | What the operator can see | What stays private |
+|----------|---------------------------|--------------------|
+| **Server-sealed store** | Ciphertext, IV, auth tag, commitment, embedding vector. The server holds the AES-256-GCM key (`ZKSHARE_ENCRYPTION_SECRET`) and decrypts in memory only when the caller invokes `prove`, `share`, or `search` summaries. | Database operators (without the encryption secret) and direct table readers (RLS denies `anon` and `authenticated`) cannot read plaintext. |
+| **Client-sealed (E2EE) store** | Opaque ciphertext blobs, IV, auth tag, commitment, and a caller-supplied embedding vector. The server **never** receives or derives plaintext, and never calls an embedding model on the fact. | The platform operator. Decryption requires the caller's own key, which never leaves the caller. |
+| **Proof envelopes** | A versioned, HMAC-signed JSON envelope (commitment + query + yes/no answer + nonce). Verifiable by anyone holding `ZKSHARE_PROOF_SECRET`. | The fact plaintext used to derive the answer is never included in the envelope. |
+
+### What this means in practice
+
+- **Users** can prove a property of a personal fact (for example, "the user prefers beach trips") to
+  a third party without exposing the underlying value. The third party verifies the envelope
+  through `verify_proof`.
+- **Agents** can hold and exchange context across sessions or tool boundaries without surfacing the
+  raw values to downstream systems. Sharing produces a single-use, time-bound `share_token`
+  bound to a recipient agent identifier.
+- **Businesses** integrating the API can offer privacy guarantees that are technical, not
+  contractual — RLS denies direct table access, the encryption key is server-only, the proof
+  HMAC secret is server-only, and the client-sealed path lets sensitive data stay outside the
+  operator's reach entirely.
+
+`SECURITY.md` documents the full threat model, environment variables, key rotation, third-party
+LLM exposure, and the honest roadmap from "encrypted at rest" to "verify-only" to "real TEE."
+
+---
+
+## API contract
+
+| Operation | Behavior |
+|-----------|----------|
+| `store` | **Server-sealed:** caller sends `value`. Server encrypts with AES-256-GCM, computes a salted commitment, generates an embedding (or accepts a 1536-dim `embedding`), and persists with `client_encrypted = false`. **Client-sealed:** caller sends `ciphertext`, `iv`, `auth_tag`, `commitment`, and the **required** `embedding`. Server stores blobs and the vector, sets `client_encrypted = true`, and never derives anything from the plaintext or label. |
+| `prove` | Loads a server-sealed fact, decrypts in memory, derives a yes/no answer for the supplied query (LLM with `temperature: 0`, or a heuristic when external LLMs are disabled), and returns an HMAC-signed proof envelope. Returns `422 / CLIENT_ENCRYPTED` if the fact is client-sealed. |
+| `share` | Same as `prove`, plus inserts a row into `share_tokens` (recipient_agent_id, expiry, proof) and returns a `share_token`. The token is a 24-byte base64url string, valid for seven days. |
+| `search` | Embeds the query, calls `match_facts` (a `security definer` SQL function with cosine distance over `pgvector`), and returns ranked summaries for **server-sealed rows only**. Client-sealed rows are excluded at the SQL level **and** the application level. |
+| `verify_proof` | Validates an envelope without loading any fact. Malformed envelope returns `400 / VALIDATION_ERROR`; well-formed envelope with a bad HMAC returns `200` with `data.valid: false`. |
+| `enclave` | Executes a small allow-listed function inside an isolated `node:vm` sandbox and returns the result with attestation metadata and a short-lived HS256 JWT (`proof_of_execution`). The current implementation is a **WASM-class simulation** intended to be replaced with a real TEE provider; the response shape is stable across that swap. |
+
+Authoritative request and response shapes live in [`types/index.ts`](./types/index.ts) and
+[`openapi.json`](./openapi.json).
+
+### Error codes
+
+| Code | HTTP | Meaning |
+|------|------|---------|
+| `INVALID_API_KEY` | `401` | Missing, malformed, or revoked key. |
+| `RATE_LIMITED` | `429` | Per-key sliding-window limit exceeded. `Retry-After` header included. |
+| `VALIDATION_ERROR` | `400` | Body fails the Zod schema or a malformed proof was passed to `verify_proof`. |
+| `FACT_NOT_FOUND` | `404` | No row matches `(api_key_id, logical_user_id, fact_key)`. |
+| `PROOF_FAILED` | `400` | Decryption failed or no definite yes/no answer could be derived. |
+| `CLIENT_ENCRYPTED` | `422` | `prove` or `share` was called against a client-sealed fact. |
+| `INTERNAL_ERROR` | `500` | Caught exception. The original message is logged via `lib/logger.ts`; clients see a generic message. |
 
 ---
 
 ## Architecture
 
-- **Runtime:** Node.js route handlers for `/api/v1/context` (not Edge) so crypto and Supabase service role behave predictably.
-- **Data:** `facts` (ciphertext, iv, auth_tag, commitment, `vector(1536)` embedding, `client_encrypted`), `api_keys`, `audit_logs`, `share_tokens`. RLS denies direct `anon` / `authenticated` access; the server uses **service_role** only.
-- **Search:** `match_facts(api_key_id, logical_user_id, query_embedding, match_count)` — security definer, returns server-sealed rows only. Replacing this function with a different `RETURNS TABLE` shape requires **`DROP FUNCTION …` first** (Postgres limitation); see migrations.
-- **Secrets:** `ZKSHARE_ENCRYPTION_SECRET` (AES-GCM for server-sealed payloads), `ZKSHARE_PROOF_SECRET` (commitments + proof HMACs). See [`SECURITY.md`](./SECURITY.md) for LLM routing, CORS, and operational checklist.
+- **Runtime:** `/api/v1/context` is a Node.js route handler (not Edge) so AES-256-GCM, scrypt key
+  derivation, and the Supabase service-role client behave deterministically.
+- **Persistence:** PostgreSQL with extensions and tables managed by versioned migrations under
+  `supabase/migrations/`. Tables: `api_keys`, `facts`, `audit_logs`, `share_tokens`. The `facts`
+  table stores ciphertext, IV, auth tag, commitment, a `vector(1536)` embedding, and a
+  `client_encrypted` flag.
+- **Search:** `match_facts(api_key_id, logical_user_id, query_embedding, match_count)` is a
+  `security definer` function with an IVFFlat index. It returns server-sealed rows only.
+  Updating the function's row type requires `DROP FUNCTION ... CASCADE`-style replacement (a
+  PostgreSQL constraint) — the migrations handle this explicitly.
+- **Authentication and authorization:**
+  - End-user dashboard: Supabase Auth magic-link sign-in. `middleware.ts` redirects unauthenticated
+    visitors away from `/dashboard`.
+  - HTTP API: `x-api-key` header. Keys are stored as SHA-256 hashes; only the prefix is shown in
+    the dashboard. Rotating a key requires generating a new one — plaintext is never persisted.
+  - Database access: RLS denies all direct access from `anon` and `authenticated` roles. The
+    application uses the Supabase **service role** server-side only.
+- **Rate limiting:** Upstash Redis (sliding window) when configured; an in-process fallback is
+  used in local development.
+- **Encryption keys:**
+  - `ZKSHARE_ENCRYPTION_SECRET` — server-side AES-256-GCM master secret (scrypt-derived; minimum
+    32 characters).
+  - `ZKSHARE_PROOF_SECRET` — HMAC secret for commitments and proof envelopes (minimum 16
+    characters).
+  - `ZKSHARE_ENCLAVE_JWT_SECRET` — HS256 secret for enclave attestations (minimum 32 characters).
+  - All three are required for the relevant code paths. The application throws on startup if any
+    are missing or too short.
 
 ---
 
@@ -33,21 +104,14 @@ Authoritative request/response shapes: [`types/index.ts`](./types/index.ts), [`o
 
 | Path | Purpose |
 |------|---------|
-| `app/` | Routes: marketing pages, dashboard, `api/v1/context`, auth callback, webhooks, health. |
-| `lib/` | Encryption, embeddings, ZK/proof helpers, rate limit, Supabase server/browser clients, search hydration. |
-| `components/` | UI (shadcn-style). |
-| `supabase/migrations/` | Ordered SQL: extension, tables, RPCs, RLS, upgrades, `client_encrypted` + `match_facts` updates. |
-| `circuits/` | Circom-oriented assets / notes for future Groth16 wiring (`snarkjs` is a dependency). |
-
-There is **no** separate `frontend/` tree; the Next.js app under `app/` is the only web surface in this repo.
-
----
-
-## Prerequisites
-
-- Node 20+ (project uses `pnpm`; `npm` / `yarn` work if you adjust lockfile usage).
-- Supabase project with Postgres + Auth.
-- Optional: Upstash Redis (rate limits), Stripe (plans — see env template), OpenRouter or OpenAI for embeddings/chat.
+| `app/` | Next.js App Router routes — public site, dashboard, API endpoints (`api/v1/context`, `api/keys`, `api/billing`, `api/webhooks/stripe`, `api/health`, `api/health/ready`, `api/audit/export`, `auth/callback`). |
+| `lib/` | Server-only modules: `encryption.ts`, `zk.ts`, `embeddings.ts`, `search.ts`, `enclave.ts`, `api-key.ts`, `rate-limit.ts`, `audit.ts`, `llm-client.ts`, `supabase-server.ts`, `supabase-browser.ts`. |
+| `components/` | UI components built on shadcn/ui primitives. |
+| `types/index.ts` | Zod request schema, operation enum, error codes, and shared row types. |
+| `supabase/migrations/` | Ordered SQL migrations. |
+| `circuits/` | Notes and placeholders for future Groth16 wiring. `snarkjs` is a runtime dependency but is not on the default trust path. |
+| `openapi.json` | OpenAPI 3.1 description of the public surface. |
+| `SECURITY.md` | Threat model, operational checklist, and the encryption / LLM matrix. |
 
 ---
 
@@ -56,59 +120,71 @@ There is **no** separate `frontend/` tree; the Next.js app under `app/` is the o
 ```bash
 pnpm install
 cp .env.local.example .env.local
-# Fill Supabase keys and secrets (see comments in .env.local.example; defaults for LLM slugs are in code / SECURITY.md)
+# Fill the Supabase, ZKSHARE_*, and (optionally) LLM, Upstash, and Stripe values.
+# Defaults for LLM model slugs live in lib/llm-client.ts.
 pnpm dev
 ```
 
-Apply migrations before exercising the API (see [`supabase/README.md`](./supabase/README.md)).
+Apply migrations against your Supabase database before exercising the API. See
+[`supabase/README.md`](./supabase/README.md).
 
-### Smoke requests
+### Smoke tests
 
-```bash
-curl -sS -X POST http://localhost:3000/api/v1/context \
-  -H "x-api-key: zk_live_..." \
-  -H "Content-Type: application/json" \
-  -d "{\"operation\":\"store\",\"user_id\":\"user_123\",\"fact_key\":\"example\",\"value\":\"hello\"}"
-```
+Server-sealed store followed by a proof:
 
 ```bash
 curl -sS -X POST http://localhost:3000/api/v1/context \
   -H "x-api-key: zk_live_..." \
   -H "Content-Type: application/json" \
-  -d "{\"operation\":\"prove\",\"user_id\":\"user_123\",\"fact_key\":\"example\",\"query\":\"does the fact say hello?\"}"
+  -d '{"operation":"store","user_id":"user_123","fact_key":"example","value":"hello"}'
+
+curl -sS -X POST http://localhost:3000/api/v1/context \
+  -H "x-api-key: zk_live_..." \
+  -H "Content-Type: application/json" \
+  -d '{"operation":"prove","user_id":"user_123","fact_key":"example","query":"does the fact say hello?"}'
 ```
 
-- **Liveness:** `GET /api/health`
-- **Readiness:** `GET /api/health/ready`
+Verifying a proof string:
+
+```bash
+curl -sS -X POST http://localhost:3000/api/v1/context \
+  -H "x-api-key: zk_live_..." \
+  -H "Content-Type: application/json" \
+  -d '{"operation":"verify_proof","proof":"<base64url envelope from the prove response>"}'
+```
+
+Health probes:
+
+- Liveness: `GET /api/health`
+- Readiness (database): `GET /api/health/ready`
 
 ---
 
-## Migrations and production
+## Production checklist (excerpt)
 
-- Run SQL in **timestamp order** (CLI `supabase db push` or paste per file in the Supabase SQL editor).
-- Auth redirect URLs must include your deployment’s `/auth/callback`.
-- Key revocation: `POST /api/keys/:id/revoke` (session-authenticated) or set `revoked_at` via SQL.
-
----
-
-## Zero-knowledge / proofs (precise wording)
-
-Today’s **proof** field is a **versioned JSON object + HMAC** (`lib/zk.ts`), binding commitment, query, and yes/no answer. **snarkjs** is included for pipeline experiments; Groth16 verification is **not** wired as the default trust path in API responses yet. Treat marketing copy that implies full SNARK verification on every response as **aspirational** unless you ship the circuit artifacts and verifier path.
+- Set every `ZKSHARE_*` secret with sufficient entropy and rotate them on a defined cadence.
+- Set `ZKSHARE_CORS_ORIGIN` to the explicit web origin(s) — never `*` in production.
+- Configure Supabase Auth redirect URLs for `/auth/callback` on every deployed environment.
+- Run migrations in timestamp order on each environment; CI should fail if migrations are pending.
+- Apply IVFFlat index maintenance (`REINDEX`) once representative data is loaded.
+- Enable Upstash Redis for rate limits in any environment exposed to the public internet.
+- Review `SECURITY.md` end-to-end before exposing the API.
 
 ---
 
-## GitHub “About” (sidebar metadata)
+## Status of the "zero-knowledge" claim
 
-GitHub does not read this file automatically. Set **Repository description** and **Topics** in the repo **Settings → General**, or use `gh repo edit` locally.
+The `proof` field returned today is a **versioned JSON envelope signed with HMAC-SHA256**, binding
+the commitment, the query, and the yes/no answer. Verification with `verify_proof` is constant-time
+relative to the envelope size and does not require access to the underlying fact.
 
-**Suggested short description (≤350 chars):**
-
-> Single-endpoint context API: encrypted facts, pgvector search, HMAC proof envelopes, optional client-sealed storage. Next.js, Supabase, TypeScript.
-
-**Suggested topics:** `nextjs` `supabase` `postgresql` `pgvector` `typescript` `privacy` `encryption` `api` `zero-knowledge` `semantic-search`
+`snarkjs` is included as a dependency, and `circuits/` documents the intended Groth16 path for
+future work. **Groth16 verification is not on the default response path.** Treat any external claim
+of full SNARK-on-every-call as aspirational unless the verifier and circuit artifacts have been
+shipped and audited.
 
 ---
 
 ## License
 
-Specify your license in this section (repository default is not set by the maintainers here).
+Specify your license in this section before distributing the project.

@@ -106,9 +106,13 @@ export async function simulateEnclave(input: {
     public_key: process.env.ZKSHARE_ENCLAVE_PUBLIC_KEY_STUB ?? "dev-local-stub",
   };
 
-  const secret = new TextEncoder().encode(
-    process.env.ZKSHARE_ENCLAVE_JWT_SECRET ?? "dev-only-change-me-32chars-minimum!!",
-  );
+  const secretValue = process.env.ZKSHARE_ENCLAVE_JWT_SECRET;
+  if (!secretValue || secretValue.length < 32) {
+    throw new Error(
+      "ZKSHARE_ENCLAVE_JWT_SECRET must be set (min 32 chars) to sign enclave attestations",
+    );
+  }
+  const secret = new TextEncoder().encode(secretValue);
   const proof_of_execution = await new SignJWT({
     sub: enclaveId,
     action: input.action,
