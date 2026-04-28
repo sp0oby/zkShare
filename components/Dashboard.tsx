@@ -4,6 +4,17 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { ArrowLeft, Copy, Check, KeyRound, Activity, Shield, CreditCard, Ban } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogTrigger,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogFooter,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogAction,
+  AlertDialogCancel,
+} from "@/components/ui/alert-dialog";
 import { Navbar } from "@/components/navbar";
 import { GridBackground } from "@/components/grid-background";
 import { Button } from "@/components/ui/button";
@@ -64,13 +75,12 @@ export function Dashboard() {
   };
 
   const revokeKey = async (id: string) => {
-    if (!confirm("Revoke this key? Any requests using it will be rejected immediately.")) return;
     setRevokingId(id);
     try {
       const res = await fetch(`/api/keys/${id}/revoke`, { method: "POST", credentials: "include" });
       const json = (await res.json()) as { success?: boolean; error?: string };
       if (!res.ok || !json.success) {
-        alert(json.error ?? "Could not revoke key");
+        setBillingMsg(json.error ?? "Could not revoke key");
       }
       await refresh();
     } finally {
@@ -327,16 +337,40 @@ export function Dashboard() {
                           </p>
                         </div>
                         {!k.revoked_at ? (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="rounded-none font-mono border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive shrink-0"
-                            disabled={revokingId === k.id}
-                            onClick={() => void revokeKey(k.id)}
-                          >
-                            <Ban className="w-3.5 h-3.5 mr-1.5" />
-                            {revokingId === k.id ? "Revoking…" : "Revoke"}
-                          </Button>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="rounded-none font-mono border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive shrink-0"
+                                disabled={revokingId === k.id}
+                              >
+                                <Ban className="w-3.5 h-3.5 mr-1.5" />
+                                {revokingId === k.id ? "Revoking…" : "Revoke"}
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent className="rounded-none border-foreground/10">
+                              <AlertDialogHeader>
+                                <AlertDialogTitle className="font-mono">Revoke API key</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Key <code className="font-mono text-foreground">{k.key_prefix}…</code> will
+                                  be permanently revoked. Any requests using this key will be rejected
+                                  immediately. This cannot be undone.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel className="rounded-none font-mono">
+                                  Cancel
+                                </AlertDialogCancel>
+                                <AlertDialogAction
+                                  className="rounded-none font-mono bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                  onClick={() => void revokeKey(k.id)}
+                                >
+                                  Revoke key
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
                         ) : null}
                       </div>
                     ))}
