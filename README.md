@@ -56,7 +56,7 @@ There is **no** separate `frontend/` tree; the Next.js app under `app/` is the o
 ```bash
 pnpm install
 cp .env.local.example .env.local
-# Fill Supabase keys and ZKSHARE_* secrets (min length per .env.local.example)
+# Fill Supabase keys and secrets (see comments in .env.local.example; defaults for LLM slugs are in code / SECURITY.md)
 pnpm dev
 ```
 
