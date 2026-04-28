@@ -35,8 +35,9 @@ The platform is designed around three trust boundaries:
   HMAC secret is server-only, and the client-sealed path lets sensitive data stay outside the
   operator's reach entirely.
 
-`SECURITY.md` documents the full threat model, environment variables, key rotation, third-party
-LLM exposure, and the honest roadmap from "encrypted at rest" to "verify-only" to "real TEE."
+[`SECURITY.md`](./SECURITY.md) is the canonical reference for the threat model, the trust
+model summary, vulnerability disclosure, the operator checklist, and third-party LLM exposure
+controls.
 
 ---
 
@@ -158,33 +159,52 @@ Health probes:
 - Liveness: `GET /api/health`
 - Readiness (database): `GET /api/health/ready`
 
+### Self-audit (privacy-critical paths)
+
+```bash
+pnpm run verify:crypto
+```
+
+This runs `scripts/verify-crypto.ts` directly under Node's built-in TypeScript support and
+asserts encryption round-trip, tamper detection, deterministic commitments, and all three
+`verify_proof` outcomes (`valid`, `invalid`, `malformed`).
+
 ---
 
-## Production checklist (excerpt)
+## Production readiness
 
-- Set every `ZKSHARE_*` secret with sufficient entropy and rotate them on a defined cadence.
-- Set `ZKSHARE_CORS_ORIGIN` to the explicit web origin(s) — never `*` in production.
-- Configure Supabase Auth redirect URLs for `/auth/callback` on every deployed environment.
-- Run migrations in timestamp order on each environment; CI should fail if migrations are pending.
-- Apply IVFFlat index maintenance (`REINDEX`) once representative data is loaded.
-- Enable Upstash Redis for rate limits in any environment exposed to the public internet.
-- Review `SECURITY.md` end-to-end before exposing the API.
+The full operator checklist lives in [`SECURITY.md → Operator checklist`](./SECURITY.md#operator-checklist).
+At a minimum, before exposing the API to the public internet:
+
+- All three `ZKSHARE_*` secrets are set with high-entropy values; the application throws on startup otherwise.
+- `ZKSHARE_CORS_ORIGIN` is an explicit comma-separated allow list of origins. `*` is for unauthenticated demos only.
+- Migrations under `supabase/migrations/` have been applied in timestamp order on the target environment.
+- Upstash Redis is configured (`UPSTASH_REDIS_REST_URL` + `UPSTASH_REDIS_REST_TOKEN`); the in-process rate-limit fallback is for local development only.
+- `GET /api/health/ready` returns `200` with no `missing` entries and acknowledged `warnings`.
 
 ---
 
 ## Status of the "zero-knowledge" claim
 
 The `proof` field returned today is a **versioned JSON envelope signed with HMAC-SHA256**, binding
-the commitment, the query, and the yes/no answer. Verification with `verify_proof` is constant-time
-relative to the envelope size and does not require access to the underlying fact.
-
-`snarkjs` is included as a dependency, and `circuits/` documents the intended Groth16 path for
-future work. **Groth16 verification is not on the default response path.** Treat any external claim
-of full SNARK-on-every-call as aspirational unless the verifier and circuit artifacts have been
-shipped and audited.
+the commitment, the query, and the yes/no answer. `snarkjs` is included as a dependency, and
+`circuits/` documents the intended Groth16 path for future work. **Groth16 verification is not on
+the default response path.** Treat any external claim of full SNARK-on-every-call as aspirational
+unless the verifier and circuit artifacts have been shipped and audited.
 
 ---
 
+## Contributing
+
+See [`CONTRIBUTING.md`](./CONTRIBUTING.md) for the local-development checklist, the
+verification commands required before opening a pull request, and how to flag changes that
+touch the data plane or cryptographic paths.
+
+## Reporting a vulnerability
+
+Please **do not** open a public issue for security vulnerabilities. The disclosure process
+and contact channels are documented in [`SECURITY.md`](./SECURITY.md).
+
 ## License
 
-Specify your license in this section before distributing the project.
+Released under the [MIT License](./LICENSE).

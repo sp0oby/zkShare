@@ -1,6 +1,5 @@
 import { createHash, createHmac, randomBytes } from "crypto";
 import "server-only";
-import { chatModelId, externalLlmDisabled, getOpenAICompatibleClient } from "@/lib/llm-client";
 
 const VERSION = "zkshare-v1";
 
@@ -101,6 +100,9 @@ export async function answerYesNoFromPlaintext(
   query: string,
   plaintext: string,
 ): Promise<"yes" | "no" | "unknown"> {
+  const { chatModelId, externalLlmDisabled, getOpenAICompatibleClient } = await import(
+    "@/lib/llm-client"
+  );
   if (externalLlmDisabled()) {
     return heuristicYesNo(query, plaintext);
   }

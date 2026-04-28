@@ -26,9 +26,8 @@ export async function POST(request: NextRequest) {
   let event: import("stripe").Stripe.Event;
   try {
     event = stripe.webhooks.constructEvent(raw, sig, getStripeWebhookSecret());
-  } catch (e) {
-    const msg = e instanceof Error ? e.message : "invalid payload";
-    return NextResponse.json({ error: msg }, { status: 400 });
+  } catch {
+    return NextResponse.json({ error: "invalid signature" }, { status: 400 });
   }
 
   const supabase = createSupabaseServiceRoleClient();
@@ -110,9 +109,8 @@ export async function POST(request: NextRequest) {
       default:
         break;
     }
-  } catch (e) {
-    const msg = e instanceof Error ? e.message : "handler error";
-    return NextResponse.json({ error: msg }, { status: 500 });
+  } catch {
+    return NextResponse.json({ error: "handler error" }, { status: 500 });
   }
 
   return NextResponse.json({ received: true });

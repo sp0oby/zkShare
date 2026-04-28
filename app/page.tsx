@@ -12,39 +12,39 @@ import { PRICING, OVERAGE_USD_PER_OP_MIN, OVERAGE_USD_PER_OP_MAX } from "@/lib/p
 
 const features = [
   {
-    title: "Zero-Knowledge Proofs",
+    title: "Signed proof envelopes",
     description:
-      "Generate real ZK proofs using snarkjs and circom. Verify claims without revealing underlying data.",
+      "Prove a property of a private fact (yes / no) with an HMAC-signed envelope. Verifiable by anyone holding the verifier secret, without ever exposing the underlying value.",
     icon: <Lock className="w-5 h-5" />,
   },
   {
-    title: "Semantic Search",
+    title: "Encrypted semantic search",
     description:
-      "Advanced vector search over encrypted context using pgvector. Find relevant information while preserving privacy.",
+      "AES-GCM at rest, pgvector with the IVFFlat index, and tenant-scoped queries. Server-sealed facts are searchable; client-sealed facts stay opaque to the server.",
     icon: <Search className="w-5 h-5" />,
   },
   {
-    title: "Confidential Compute",
+    title: "Isolated execution",
     description:
-      "Run sensitive operations inside isolated WASM enclaves. Your data never leaves the secure boundary.",
+      "Run small allow-listed actions inside an isolated VM sandbox with signed attestation metadata. Designed to swap in a real TEE provider without changing the client contract.",
     icon: <Box className="w-5 h-5" />,
   },
   {
-    title: "Agent Native",
+    title: "Built for agents",
     description:
-      "Built for AI agents and MCP tools. Share context across swarms without leaking PII or strategy.",
+      "Share context across tools, sessions, and agent swarms without surfacing raw values to downstream systems. Single-use share tokens are bound to a recipient and expiry.",
     icon: <Zap className="w-5 h-5" />,
   },
   {
-    title: "Compliance Ready",
+    title: "Operator controls",
     description:
-      "GDPR, EU AI Act, and HIPAA compliant by design. Audit logs and immutable trails included.",
+      "Hashed API keys, deny-all RLS, audit logs, request-id propagation, sliding-window rate limits, and instant key revocation. The technical hooks compliance regimes ask for.",
     icon: <Shield className="w-5 h-5" />,
   },
   {
-    title: "Simple API",
+    title: "One endpoint, six operations",
     description:
-      "One endpoint, five operations. Store, prove, share, search, and enclave. Ship in minutes.",
+      "store, prove, share, search, verify_proof, and enclave — all through a single POST. OpenAPI 3.1 spec is checked into the repo.",
     icon: <Key className="w-5 h-5" />,
   },
 ];
@@ -91,8 +91,9 @@ export default function Home() {
               Zero-knowledge context sharing
             </h1>
             <p className="text-lg text-muted-foreground leading-relaxed mb-8 max-w-lg">
-              Private by design. Share verifiable insights between AI agents and
-              humans without ever revealing source data.
+              A privacy-oriented context API. Store encrypted facts, prove
+              properties without revealing them, and share verifiable answers
+              between agents — through a single endpoint.
             </p>
             <div className="flex flex-wrap gap-4">
               <Link
@@ -140,8 +141,10 @@ export default function Home() {
               Built for privacy-first applications
             </h2>
             <p className="text-muted-foreground max-w-2xl">
-              ZKshare provides the cryptographic primitives you need to build
-              trustworthy AI systems. Real zero-knowledge, not security theater.
+              The cryptographic and operational primitives behind a trustworthy
+              AI system: encryption at rest, signed proof envelopes,
+              tenant-scoped search, audit logs, and an end-to-end-encrypted
+              path where the operator never sees plaintext.
             </p>
           </motion.div>
 
@@ -304,13 +307,14 @@ export default function Home() {
             </h2>
           </motion.div>
 
-          <div className="grid md:grid-cols-5 gap-px bg-foreground/10">
+          <div className="grid md:grid-cols-3 lg:grid-cols-6 gap-px bg-foreground/10">
             {[
               { op: "store", desc: "Encrypt and embed facts" },
-              { op: "prove", desc: "Generate ZK proofs" },
-              { op: "share", desc: "Share with agents" },
+              { op: "prove", desc: "Signed yes / no envelopes" },
+              { op: "share", desc: "Time-bound share tokens" },
               { op: "search", desc: "Semantic vector search" },
-              { op: "enclave", desc: "Confidential compute" },
+              { op: "verify_proof", desc: "Validate without plaintext" },
+              { op: "enclave", desc: "Isolated execution" },
             ].map((item, i) => (
               <motion.div
                 key={item.op}

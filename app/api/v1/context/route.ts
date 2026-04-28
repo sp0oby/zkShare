@@ -18,23 +18,45 @@ import { decryptFactRow } from "@/lib/encryption";
 import { simulateEnclave } from "@/lib/enclave";
 import { semanticSearchOverFacts, hydrateSearchResults, type RankedFactRow } from "@/lib/search";
 import { logError } from "@/lib/logger";
+import { assertCryptoSecrets, assertSupabaseConfig } from "@/lib/env";
 
 export const runtime = "nodejs";
+
+assertCryptoSecrets();
+assertSupabaseConfig();
 
 /** Max JSON body size for /context (bytes) — agents should stream large payloads elsewhere */
 const MAX_BODY_BYTES = 512 * 1024;
 
 function corsHeaders(request: NextRequest): Record<string, string> {
-  const configured = process.env.ZKSHARE_CORS_ORIGIN;
-  const origin = request.headers.get("origin") ?? "";
-  const allowOrigin =
-    configured === "*" || !configured ? "*" : configured.includes(origin) ? origin : configured;
-  return {
-    "Access-Control-Allow-Origin": allowOrigin,
+  const configured = process.env.ZKSHARE_CORS_ORIGIN?.trim() ?? "";
+  const origin = request.headers.get("origin")?.trim() ?? "";
+
+  const baseHeaders: Record<string, string> = {
     "Access-Control-Allow-Methods": "POST, OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type, x-api-key, Authorization, x-request-id",
     "Access-Control-Max-Age": "86400",
+    Vary: "Origin",
   };
+
+  if (!configured) {
+    return baseHeaders;
+  }
+
+  if (configured === "*") {
+    return { ...baseHeaders, "Access-Control-Allow-Origin": "*" };
+  }
+
+  const allowList = configured
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+
+  if (origin && allowList.includes(origin)) {
+    return { ...baseHeaders, "Access-Control-Allow-Origin": origin };
+  }
+
+  return baseHeaders;
 }
 
 function responseHeaders(
@@ -187,7 +209,11 @@ export async function POST(request: NextRequest) {
             .single();
 
           if (error) {
-            return err(request, requestId, 500, "INTERNAL_ERROR", error.message);
+            logError("store_client_sealed_failed", {
+              request_id: requestId,
+              message: error.message,
+            });
+            return err(request, requestId, 500, "INTERNAL_ERROR", "Could not persist fact");
           }
 
           return finish(
@@ -229,7 +255,11 @@ export async function POST(request: NextRequest) {
           .single();
 
         if (error) {
-          return err(request, requestId, 500, "INTERNAL_ERROR", error.message);
+          logError("store_server_sealed_failed", {
+            request_id: requestId,
+            message: error.message,
+          });
+          return err(request, requestId, 500, "INTERNAL_ERROR", "Could not persist fact");
         }
 
         return finish(
@@ -393,7 +423,11 @@ export async function POST(request: NextRequest) {
             .eq("client_encrypted", false);
 
           if (error) {
-            return err(request, requestId, 500, "INTERNAL_ERROR", error.message);
+            logError("search_fallback_failed", {
+              request_id: requestId,
+              message: error.message,
+            });
+            return err(request, requestId, 500, "INTERNAL_ERROR", "Search failed");
           }
 
           results = await semanticSearchOverFacts({
@@ -440,6 +474,12 @@ export async function POST(request: NextRequest) {
   } catch (e) {
     const message = e instanceof Error ? e.message : "Unexpected error";
     logError("context_operation_failed", { request_id: requestId, message });
-    return err(request, requestId, 500, "INTERNAL_ERROR", message);
+    return err(
+      request,
+      requestId,
+      500,
+      "INTERNAL_ERROR",
+      "An internal error occurred. Reference the request_id when contacting support.",
+    );
   }
 }

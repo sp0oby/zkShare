@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "tsc --noEmit",
-    "db:push": "supabase db push"
+    "db:push": "supabase db push",
+    "verify:crypto": "node --import ./scripts/_register-loader.mjs --experimental-strip-types --no-warnings scripts/verify-crypto.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",

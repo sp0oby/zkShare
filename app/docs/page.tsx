@@ -12,17 +12,19 @@ const sections = [
   {
     id: "overview",
     title: "Overview",
-    content: `ZKshare is a production-grade, privacy-first API that enables AI agents and human users to:
+    content: `ZKshare is a privacy-oriented context API for users, agents, and back-office systems.
+A single HTTP entrypoint exposes six operations:
 
-- Store facts encrypted + embedded for semantic search
-- Generate real zero-knowledge proofs (snarkjs + circom)
-- Share verifiable yes/no insights without revealing source data
-- Run sensitive operations inside confidential compute enclaves
-- Perform advanced semantic search over private context
+- store      — server-sealed (AES-GCM) or client-sealed (E2EE) facts
+- prove      — return a signed yes/no envelope bound to a commitment
+- share      — same as prove, plus a single-use, time-bound share token
+- search     — semantic search over server-sealed facts (pgvector)
+- verify_proof — validate a previously issued envelope without loading plaintext
+- enclave    — execute a small allow-listed action inside an isolated sandbox
 
-Even a fully compromised agent can only request proofs it has permission for — raw data stays encrypted and inaccessible.
+Server-sealed facts: the server holds the AES-256-GCM key (\`ZKSHARE_ENCRYPTION_SECRET\`) and decrypts in memory only when you call prove, share, or generate a search summary. Client-sealed facts: the server only sees ciphertext, IV, auth tag, commitment, and your supplied 1536-dim embedding. Client-sealed rows are excluded from server-side search, prove, and share — use local crypto plus verify_proof.
 
-**Client-sealed (E2EE) facts:** you can store ciphertext + commitment only; the service never sees plaintext. Those facts are excluded from server-side semantic search and from prove/share (use local crypto + verify_proof for receipts). **Server-sealed facts** support full search and prove flows; embeddings are derived on the server unless you supply \`embedding\`.`,
+Today\u2019s proof field is a versioned JSON envelope signed with HMAC-SHA256 (commitment, query, answer, nonce). \`snarkjs\` is included for future Groth16 wiring; that path is not on the default response trust model yet.`,
   },
   {
     id: "authentication",
@@ -66,7 +68,8 @@ const operations = [
   },
   {
     name: "prove",
-    description: "Generate a zero-knowledge proof answering a natural-language query",
+    description:
+      "Return a signed yes/no envelope bound to the fact commitment and the query. Today the envelope is HMAC-SHA256; SNARK verification is on the roadmap.",
     request: `{
   "operation": "prove",
   "user_id": "user_123",
@@ -85,7 +88,8 @@ const operations = [
   },
   {
     name: "share",
-    description: "Share a verifiable proof with another agent",
+    description:
+      "Issue a time-bound, single-use share token bound to a recipient agent id and a signed proof envelope.",
     request: `{
   "operation": "share",
   "user_id": "user_123",
@@ -150,7 +154,8 @@ const operations = [
   },
   {
     name: "enclave",
-    description: "Run a simulated WASM-isolated action with attestation metadata",
+    description:
+      "Run a small allow-listed action inside an isolated VM sandbox; returns the result with attestation metadata and a short-lived HS256 JWT. Replace with a real TEE provider before relying on hardware attestation.",
     request: `{
   "operation": "enclave",
   "user_id": "user_123",
