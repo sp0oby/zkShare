@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { ArrowLeft, Copy, Check, KeyRound, Activity, Shield, CreditCard } from "lucide-react";
+import { ArrowLeft, Copy, Check, KeyRound, Activity, Shield, CreditCard, Ban } from "lucide-react";
 import { Navbar } from "@/components/navbar";
 import { GridBackground } from "@/components/grid-background";
 import { Button } from "@/components/ui/button";
@@ -31,6 +31,7 @@ export function Dashboard() {
   const [copied, setCopied] = useState(false);
   const [billingBusy, setBillingBusy] = useState(false);
   const [billingMsg, setBillingMsg] = useState<string | null>(null);
+  const [revokingId, setRevokingId] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
     const res = await fetch("/api/keys", { credentials: "include" });
@@ -60,6 +61,21 @@ export function Dashboard() {
     await navigator.clipboard.writeText(newKey);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const revokeKey = async (id: string) => {
+    if (!confirm("Revoke this key? Any requests using it will be rejected immediately.")) return;
+    setRevokingId(id);
+    try {
+      const res = await fetch(`/api/keys/${id}/revoke`, { method: "POST", credentials: "include" });
+      const json = (await res.json()) as { success?: boolean; error?: string };
+      if (!res.ok || !json.success) {
+        alert(json.error ?? "Could not revoke key");
+      }
+      await refresh();
+    } finally {
+      setRevokingId(null);
+    }
   };
 
   const startCheckout = async (tier: "starter" | "pro") => {
@@ -261,6 +277,74 @@ export function Dashboard() {
               </Card>
             </motion.div>
           </div>
+
+          {/* API Keys list */}
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.45, delay: 0.11 }}
+          >
+            <Card className="border-foreground/10 rounded-none shadow-none bg-background">
+              <CardHeader className="border-b border-foreground/10">
+                <CardTitle className="font-mono text-base flex items-center gap-2">
+                  <KeyRound className="w-4 h-4" />
+                  API Keys
+                </CardTitle>
+                <CardDescription>
+                  All keys on your account. Revoked keys are rejected immediately on the next API call.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="pt-6">
+                {loading ? (
+                  <p className="text-sm font-mono text-muted-foreground">Loading…</p>
+                ) : keys.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">
+                    No keys yet. Click &quot;New API key&quot; above to create one.
+                  </p>
+                ) : (
+                  <div className="space-y-3">
+                    {keys.map((k) => (
+                      <div
+                        key={k.id}
+                        className="flex items-center justify-between gap-4 border border-foreground/10 p-4 bg-foreground/[0.02]"
+                      >
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <code className="text-sm font-mono">{k.key_prefix}…</code>
+                            <Badge
+                              variant="outline"
+                              className={`rounded-none font-mono text-xs border-foreground/20 ${k.revoked_at ? "text-destructive border-destructive/30" : ""}`}
+                            >
+                              {k.revoked_at ? "Revoked" : "Active"}
+                            </Badge>
+                            <Badge variant="outline" className="rounded-none font-mono text-xs border-foreground/20 capitalize">
+                              {k.plan_tier ?? "free"}
+                            </Badge>
+                          </div>
+                          <p className="text-xs font-mono text-muted-foreground mt-1">
+                            {k.calls_this_month.toLocaleString()} / {k.monthly_limit >= 999_999_000 ? "∞" : k.monthly_limit.toLocaleString()} calls
+                            {k.revoked_at ? ` · revoked ${new Date(k.revoked_at).toLocaleDateString()}` : ""}
+                          </p>
+                        </div>
+                        {!k.revoked_at ? (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="rounded-none font-mono border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive shrink-0"
+                            disabled={revokingId === k.id}
+                            onClick={() => void revokeKey(k.id)}
+                          >
+                            <Ban className="w-3.5 h-3.5 mr-1.5" />
+                            {revokingId === k.id ? "Revoking…" : "Revoke"}
+                          </Button>
+                        ) : null}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </motion.div>
 
           {tierLabel !== "enterprise" ? (
             <motion.div
