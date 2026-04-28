@@ -179,7 +179,7 @@ export function ChatWidget() {
         <button
           type="button"
           onClick={() => setOpen(true)}
-          className="fixed bottom-6 right-6 z-50 w-14 h-14 bg-foreground text-background flex items-center justify-center shadow-lg hover:bg-foreground/90 transition-colors"
+          className="fixed z-50 bottom-[max(1rem,env(safe-area-inset-bottom))] right-[max(1rem,env(safe-area-inset-right))] md:bottom-6 md:right-6 w-14 h-14 bg-foreground text-background flex items-center justify-center shadow-lg hover:bg-foreground/90 transition-colors"
           aria-label="Open chat support"
         >
           <MessageCircle className="w-6 h-6" />
@@ -188,7 +188,7 @@ export function ChatWidget() {
 
       {/* Chat panel */}
       {open && (
-        <div className="fixed bottom-6 right-6 z-50 w-[380px] max-h-[520px] border border-foreground/10 bg-background shadow-2xl flex flex-col">
+        <div className="fixed z-50 inset-x-4 bottom-[max(1rem,env(safe-area-inset-bottom))] max-h-[min(520px,calc(100dvh-5rem))] md:inset-auto md:left-auto md:bottom-[max(1.5rem,env(safe-area-inset-bottom))] md:right-[max(1.5rem,env(safe-area-inset-right))] md:w-[min(380px,calc(100vw-3rem))] md:max-h-[520px] w-auto border border-foreground/10 bg-background shadow-2xl flex flex-col">
           {/* Header */}
           <div className="flex items-center justify-between px-4 py-3 border-b border-foreground/10 bg-foreground/[0.02]">
             <div>

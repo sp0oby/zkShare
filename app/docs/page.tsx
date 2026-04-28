@@ -424,13 +424,13 @@ function QuickStartSection() {
         </Link>
         .
       </p>
-      <div className="flex gap-1 mb-4">
+      <div className="flex flex-wrap gap-2 mb-4">
         {langs.map((l) => (
           <button
             key={l.key}
             type="button"
             onClick={() => setLang(l.key)}
-            className={`px-4 py-2 text-xs font-mono transition-colors border ${
+            className={`flex-1 min-[400px]:flex-none px-3 sm:px-4 py-2 text-xs font-mono text-center transition-colors border ${
               lang === l.key
                 ? "bg-foreground text-background border-foreground"
                 : "bg-transparent text-muted-foreground border-foreground/10 hover:border-foreground/30"
@@ -455,7 +455,7 @@ export default function DocsPage() {
       <GridBackground />
       <Navbar />
 
-      <main className="pt-24 pb-32 px-6">
+      <main className="pt-24 pb-24 sm:pb-32 px-4 sm:px-6">
         <div className="max-w-4xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -470,7 +470,7 @@ export default function DocsPage() {
               Back to Home
             </Link>
 
-            <h1 className="text-4xl font-semibold tracking-tight mb-4">
+            <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight mb-4 text-balance">
               Documentation
             </h1>
             <p className="text-lg text-muted-foreground mb-12">
@@ -483,7 +483,7 @@ export default function DocsPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.1 }}
-            className="border border-foreground/10 p-6 mb-16 bg-background"
+            className="border border-foreground/10 p-4 sm:p-6 mb-16 bg-background"
           >
             <h2 className="font-mono font-semibold mb-4">Contents</h2>
             <nav className="space-y-2">
@@ -643,7 +643,7 @@ Your agent only needs the API key. No SDKs, no extra dependencies.`}
               Beyond included monthly operations, bill overages via Stripe metered usage (typically $
               {OVERAGE_USD_PER_OP_MIN}–${OVERAGE_USD_PER_OP_MAX} per call with volume discounts).
             </p>
-            <div className="border border-foreground/10 overflow-hidden">
+            <div className="border border-foreground/10 overflow-x-auto -mx-px">
               <table className="w-full text-sm">
                 <thead className="bg-foreground/[0.02] border-b border-foreground/10">
                   <tr>
@@ -701,7 +701,7 @@ Your agent only needs the API key. No SDKs, no extra dependencies.`}
 }`}
               language="json"
             />
-            <div className="mt-8 border border-foreground/10 overflow-hidden">
+            <div className="mt-8 border border-foreground/10 overflow-x-auto -mx-px">
               <table className="w-full text-sm">
                 <thead className="bg-foreground/[0.02] border-b border-foreground/10">
                   <tr>

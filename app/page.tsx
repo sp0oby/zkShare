@@ -99,8 +99,8 @@ export default function Home() {
       <Navbar />
 
       {/* Hero Section */}
-      <section className="relative min-h-screen flex items-center justify-center px-6 pt-16">
-        <div className="max-w-6xl mx-auto w-full grid lg:grid-cols-2 gap-12 items-center">
+      <section className="relative min-h-[min(100vh,900px)] sm:min-h-screen flex items-center justify-center px-4 sm:px-6 pt-20 pb-12 md:py-24 md:pt-16">
+        <div className="max-w-6xl mx-auto w-full grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
@@ -110,7 +110,7 @@ export default function Home() {
               <div className="w-2 h-2 bg-foreground animate-pulse" />
               Production Ready
             </div>
-            <h1 className="text-5xl lg:text-6xl font-semibold tracking-tight leading-[1.1] mb-6 text-balance">
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-semibold tracking-tight leading-[1.1] mb-6 text-balance">
               Zero-knowledge context sharing
             </h1>
             <p className="text-lg text-muted-foreground leading-relaxed mb-8 max-w-lg">
@@ -118,7 +118,7 @@ export default function Home() {
               properties without revealing them, and share verifiable answers
               between agents — through a single endpoint.
             </p>
-            <div className="flex flex-wrap gap-4">
+            <div className="flex flex-col sm:flex-row flex-wrap gap-3 sm:gap-4">
               <Link
                 href="/docs"
                 className="inline-flex items-center gap-2 px-6 py-3 bg-foreground text-background font-mono text-sm hover:bg-foreground/90 transition-colors"
@@ -151,7 +151,7 @@ export default function Home() {
       </section>
 
       {/* Features Section */}
-      <section className="relative py-32 px-6">
+      <section className="relative py-16 sm:py-24 lg:py-32 px-4 sm:px-6">
         <div className="max-w-6xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -186,7 +186,7 @@ export default function Home() {
       </section>
 
       {/* Pricing */}
-      <section className="relative py-32 px-6 border-t border-foreground/10">
+      <section className="relative py-16 sm:py-24 lg:py-32 px-4 sm:px-6 border-t border-foreground/10">
         <div className="max-w-6xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -259,7 +259,7 @@ export default function Home() {
       </section>
 
       {/* API Example Section */}
-      <section className="relative py-32 px-6 border-t border-foreground/10">
+      <section className="relative py-16 sm:py-24 lg:py-32 px-4 sm:px-6 border-t border-foreground/10">
         <div className="max-w-6xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -316,7 +316,7 @@ export default function Home() {
       </section>
 
       {/* Operations Grid */}
-      <section className="relative py-32 px-6 border-t border-foreground/10">
+      <section className="relative py-16 sm:py-24 lg:py-32 px-4 sm:px-6 border-t border-foreground/10">
         <div className="max-w-6xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -330,7 +330,7 @@ export default function Home() {
             </h2>
           </motion.div>
 
-          <div className="grid md:grid-cols-3 lg:grid-cols-6 gap-px bg-foreground/10">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-px bg-foreground/10">
             {[
               { op: "store", desc: "Encrypt and embed facts" },
               { op: "prove", desc: "Signed yes / no envelopes" },
@@ -358,7 +358,7 @@ export default function Home() {
       </section>
 
       {/* CTA Section */}
-      <section className="relative py-32 px-6 border-t border-foreground/10">
+      <section className="relative py-16 sm:py-24 lg:py-32 px-4 sm:px-6 border-t border-foreground/10">
         <div className="max-w-2xl mx-auto text-center">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -366,7 +366,7 @@ export default function Home() {
             transition={{ duration: 0.5 }}
             viewport={{ once: true }}
           >
-            <h2 className="text-4xl font-semibold tracking-tight mb-6">
+            <h2 className="text-3xl sm:text-4xl font-semibold tracking-tight mb-6">
               Start building with ZKshare
             </h2>
             <p className="text-muted-foreground mb-8">
@@ -387,15 +387,15 @@ export default function Home() {
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-foreground/10 py-12 px-6">
-        <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
+      <footer className="border-t border-foreground/10 py-10 sm:py-12 px-4 sm:px-6">
+        <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-8 text-center md:text-left">
           <div className="flex items-center gap-2">
             <div className="w-6 h-6 border border-foreground flex items-center justify-center">
               <div className="w-2 h-2 bg-foreground" />
             </div>
             <span className="font-mono text-sm">ZKshare</span>
           </div>
-          <div className="flex items-center gap-8 text-sm font-mono text-muted-foreground">
+          <nav className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm font-mono text-muted-foreground max-w-[22rem] sm:max-w-none">
             <Link href="/docs" className="hover:text-foreground transition-colors">
               Docs
             </Link>
@@ -416,7 +416,7 @@ export default function Home() {
             >
               GitHub
             </a>
-          </div>
+          </nav>
           <p className="text-xs text-muted-foreground font-mono">
             Created by ｓｐｏｏｂｓ
           </p>

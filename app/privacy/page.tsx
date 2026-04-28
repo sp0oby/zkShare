@@ -14,7 +14,7 @@ export default function PrivacyPage() {
       <GridBackground />
       <Navbar />
 
-      <main className="pt-24 pb-32 px-6">
+      <main className="pt-24 pb-24 sm:pb-32 px-4 sm:px-6">
         <div className="max-w-3xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}

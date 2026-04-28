@@ -165,7 +165,7 @@ export function Dashboard() {
       <GridBackground />
       <Navbar />
 
-      <main className="pt-24 pb-32 px-6">
+      <main className="pt-24 pb-24 sm:pb-32 px-4 sm:px-6">
         <div className="max-w-5xl mx-auto space-y-10">
           <motion.div
             initial={{ opacity: 0, y: 12 }}
@@ -182,7 +182,7 @@ export function Dashboard() {
 
             <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6">
               <div>
-                <h1 className="text-4xl font-semibold tracking-tight mb-2">Dashboard</h1>
+                <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight mb-2">Dashboard</h1>
                 <p className="text-muted-foreground max-w-xl">
                   Usage, keys, and billing context. Plans: Free ({PRICING.free.operationsPerMonth.toLocaleString()} ops),
                   Starter ($19), Pro ($49), Enterprise (custom). Metered overages on Stripe.
@@ -233,7 +233,7 @@ export function Dashboard() {
                     <p className="text-sm font-mono text-muted-foreground">Loading…</p>
                   ) : primary ? (
                     <>
-                      <div className="flex items-center justify-between gap-4">
+                      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                         <div>
                           <p className="text-xs font-mono text-muted-foreground uppercase tracking-wide">
                             Account usage this month
@@ -247,7 +247,7 @@ export function Dashboard() {
                             </span>
                           </p>
                         </div>
-                        <div className="flex flex-wrap gap-2 justify-end">
+                        <div className="flex flex-wrap gap-2 sm:justify-end">
                           <Badge variant="outline" className="rounded-none font-mono border-foreground/20 capitalize">
                             {tierLabel}
                           </Badge>
@@ -328,7 +328,7 @@ export function Dashboard() {
                     {keys.map((k) => (
                       <div
                         key={k.id}
-                        className="flex items-center justify-between gap-4 border border-foreground/10 p-4 bg-foreground/[0.02]"
+                        className="flex flex-col gap-4 border border-foreground/10 p-4 bg-foreground/[0.02] sm:flex-row sm:items-center sm:justify-between"
                       >
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-2 flex-wrap">
