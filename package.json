@@ -11,7 +11,8 @@
     "build:mcp": "pnpm --filter zkshare-mcp run build",
     "mcp": "pnpm exec zkshare-mcp",
     "db:push": "supabase db push",
-    "verify:crypto": "node --import ./scripts/_register-loader.mjs --experimental-strip-types --no-warnings scripts/verify-crypto.ts"
+    "verify:crypto": "node --import ./scripts/_register-loader.mjs --experimental-strip-types --no-warnings scripts/verify-crypto.ts",
+    "gen:favicon": "node scripts/gen-favicon.cjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",

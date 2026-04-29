@@ -57,7 +57,7 @@ export function Navbar() {
                 : "text-muted-foreground"
             )}
           >
-            AI briefing
+            AI Briefing
           </Link>
           <Link
             href="/dashboard"
@@ -129,7 +129,7 @@ export function Navbar() {
                     pathname === "/ai-context" ? "text-foreground" : "text-muted-foreground",
                   )}
                 >
-                  AI briefing
+                  AI Briefing
                 </Link>
               </SheetClose>
               <SheetClose asChild>
