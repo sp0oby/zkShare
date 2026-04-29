@@ -55,6 +55,34 @@ controls.
 Authoritative request and response shapes live in [`types/index.ts`](./types/index.ts) and
 [`openapi.json`](./openapi.json).
 
+### Model Context Protocol (MCP)
+
+The npm package **`zkshare-mcp`** (source in **`packages/zkshare-mcp/`**) is a **stdio MCP server**
+exposing tools (`zkshare_store`, `zkshare_prove`, …) that invoke **`POST https://zkshare.io/api/v1/context`**
+(or your **`ZKSHARE_API_URL`**) with **`ZKSHARE_API_KEY`**.
+
+**End users:** install [Node.js](https://nodejs.org/) ≥ 18, then run **`npx -y zkshare-mcp`** — no clone of this repo — and point Cursor (or another host) at that binary with env vars (example below).
+
+**Contributors:** from the repo root, **`pnpm install`**, **`pnpm mcp`** (builds locally + runs).
+
+Advanced **client-sealed** `store` bodies are not exposed via MCP tools — use HTTPS/OpenAPI directly.
+
+```json
+// ~/.cursor/mcp.json
+{
+  "mcpServers": {
+    "zkshare": {
+      "command": "npx",
+      "args": ["-y", "zkshare-mcp"],
+      "env": {
+        "ZKSHARE_API_KEY": "zk_live_…",
+        "ZKSHARE_API_URL": "https://zkshare.io"
+      }
+    }
+  }
+}
+```
+
 ### Error codes
 
 | Code | HTTP | Meaning |

@@ -217,6 +217,35 @@ Today\u2019s proof field is a versioned JSON envelope signed with HMAC-SHA256 (c
 The \`operation\` field in the request body determines the action.`,
   },
   {
+    id: "mcp",
+    title: "Model Context Protocol (MCP)",
+    content: `**Install from npm — no zkShare repo required** once [\`zkshare-mcp\`](https://www.npmjs.com/package/zkshare-mcp) is published. The package speaks **stdio MCP** and proxies to **\`POST /api/v1/context\`** with **\`ZKSHARE_API_KEY\`**.
+
+Requirements: Node.js 18+. Get a key from [/api-key](/api-key).
+
+Optional **\`ZKSHARE_API_URL\`** defaults to \`https://zkshare.io\`; set \`http://localhost:3000\` only when your Next app runs locally.
+
+**Until npm publish:** clone this repo, \`pnpm install\`, **\`pnpm mcp\`**, source \`packages/zkshare-mcp/\`.
+
+Advanced **client-sealed** ciphertext \`store\` (embedding bundle) stays on HTTPS/OpenAPI.`,
+    code: `# End users — run via npx (IDE starts this process; omit cwd)
+npx -y zkshare-mcp
+
+# Cursor ~/.cursor/mcp.json
+{
+  "mcpServers": {
+    "zkshare": {
+      "command": "npx",
+      "args": ["-y", "zkshare-mcp"],
+      "env": {
+        "ZKSHARE_API_KEY": "zk_live_REPLACE_ME",
+        "ZKSHARE_API_URL": "https://zkshare.io"
+      }
+    }
+  }
+}`,
+  },
+  {
     id: "responsibilities",
     title: "What you bring vs. what we run",
     content: `End user / agent — only needs the ZKshare API key (\`x-api-key: zk_live_…\`). No other credentials, no LLM account, no extra SDK.

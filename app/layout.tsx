@@ -25,6 +25,7 @@ export const metadata: Metadata = {
     "proof envelopes",
     "semantic search",
     "pgvector",
+    "Model Context Protocol",
     "end-to-end encryption",
     "HMAC",
     "AES-256-GCM",

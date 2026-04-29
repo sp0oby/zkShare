@@ -20,6 +20,9 @@ Thumbs.db
 # typescript
 *.tsbuildinfo
 
+# MCP package build output (rebuilt via `pnpm prepare` / `pnpm run build:mcp`; npm tarball includes dist)
+packages/zkshare-mcp/dist/
+
 # ide
 .idea/
 .vscode/
