@@ -248,12 +248,21 @@ export default function Home() {
                 <p className="text-2xl font-semibold mb-1">{tier.price}</p>
                 <p className="font-mono text-sm text-foreground mb-4">{tier.ops}</p>
                 <p className="text-sm text-muted-foreground leading-relaxed flex-1">{tier.detail}</p>
-                <Link
-                  href={tier.name === "Enterprise" ? "/docs" : "/api-key"}
-                  className="mt-6 inline-flex items-center justify-center font-mono text-sm border border-foreground/20 px-4 py-2 hover:border-foreground/40 transition-colors"
-                >
-                  {tier.name === "Enterprise" ? "Contact" : "Start"}
-                </Link>
+                {tier.name === "Enterprise" ? (
+                  <span
+                    className="mt-6 inline-flex items-center justify-center font-mono text-sm border border-foreground/10 px-4 py-2 text-muted-foreground cursor-not-allowed select-none pointer-events-none"
+                    aria-disabled
+                  >
+                    Coming soon
+                  </span>
+                ) : (
+                  <Link
+                    href="/api-key"
+                    className="mt-6 inline-flex items-center justify-center font-mono text-sm border border-foreground/20 px-4 py-2 hover:border-foreground/40 transition-colors"
+                  >
+                    Start
+                  </Link>
+                )}
               </motion.div>
             ))}
           </div>
