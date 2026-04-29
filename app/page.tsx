@@ -18,7 +18,7 @@ const jsonLd = {
   applicationCategory: "DeveloperApplication",
   operatingSystem: "Any",
   description:
-    "Privacy-oriented context API. Store encrypted facts, prove properties without revealing them, and share verifiable answers between agents through a single endpoint.",
+    "Privacy-oriented context API — HTTPS REST `POST /api/v1/context` plus optional Model Context Protocol server `zkshare-mcp` on npm for Cursor-compatible IDEs.",
   url: "https://zkshare.io",
   offers: {
     "@type": "Offer",
@@ -50,7 +50,7 @@ const features = [
   {
     title: "Built for agents",
     description:
-      "Share context across tools, sessions, and agent swarms without surfacing raw values to downstream systems. Single-use share tokens are bound to a recipient and expiry.",
+      "Share context across tools, sessions, and agent swarms without surfacing raw values to downstream systems. Single-use share tokens are bound to a recipient and expiry. Prefer an IDE-native flow? Install the **`zkshare-mcp`** package from npm (`npx -y zkshare-mcp`) and wire it into Cursor MCP — same backend, structured tools.",
     icon: <Zap className="w-5 h-5" />,
   },
   {
@@ -116,7 +116,9 @@ export default function Home() {
             <p className="text-lg text-muted-foreground leading-relaxed mb-8 max-w-lg">
               A privacy-oriented context API. Store encrypted facts, prove
               properties without revealing them, and share verifiable answers
-              between agents — through a single endpoint.
+              between agents — through one HTTPS endpoint or the optional MCP
+              bridge (<code className="text-foreground">zkshare-mcp</code>{" "}
+              on npm for Cursor-compatible hosts).
             </p>
             <div className="flex flex-col sm:flex-row flex-wrap gap-3 sm:gap-4">
               <Link
@@ -271,10 +273,30 @@ export default function Home() {
             <h2 className="text-3xl font-semibold tracking-tight mb-4">
               One endpoint. Six operations.
             </h2>
-            <p className="text-muted-foreground max-w-2xl mx-auto">
+            <p className="text-muted-foreground max-w-2xl mx-auto mb-4">
               Store encrypted facts, generate proofs, share with other agents,
               run semantic search, verify proof envelopes, and execute in an
-              isolated sandbox. All through a single API.
+              isolated sandbox. All through the same REST contract.
+            </p>
+            <p className="text-sm text-muted-foreground max-w-2xl mx-auto font-mono leading-relaxed">
+              <span className="uppercase tracking-wider text-foreground/70">MCP</span> adapter:{" "}
+              <span className="text-foreground">npx -y zkshare-mcp</span>
+              {" — "}
+              <Link
+                href="/docs#mcp"
+                className="text-foreground underline underline-offset-[3px] decoration-foreground/40 hover:decoration-foreground"
+              >
+                setup &amp; Cursor config
+              </Link>
+              {" · "}
+              <a
+                href="https://www.npmjs.com/package/zkshare-mcp"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-foreground underline underline-offset-[3px] decoration-foreground/40 hover:decoration-foreground"
+              >
+                npm
+              </a>
             </p>
           </motion.div>
 

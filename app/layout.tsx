@@ -16,12 +16,15 @@ export const metadata: Metadata = {
     template: "%s | ZKshare",
   },
   description:
-    "Store encrypted facts, prove properties without revealing them, and share verifiable answers between agents — through a single API endpoint. AES-256-GCM encryption, HMAC proof envelopes, pgvector search, and an end-to-end-encrypted path.",
+    "Store encrypted facts, prove properties without revealing them, and share verifiable answers between agents — HTTPS JSON API (`POST /api/v1/context`) plus optional MCP via the `zkshare-mcp` package on npm (Cursor & compatible hosts). AES-256-GCM, HMAC proof envelopes, pgvector search.",
   keywords: [
     "privacy API",
     "zero-knowledge",
     "encrypted context",
     "AI agents",
+    "zkshare-mcp",
+    "Cursor MCP",
+    "npm",
     "proof envelopes",
     "semantic search",
     "pgvector",
@@ -39,7 +42,7 @@ export const metadata: Metadata = {
     siteName: "ZKshare",
     title: "ZKshare — Privacy-oriented context API",
     description:
-      "Store encrypted facts, prove properties without revealing them, and share verifiable answers between agents — through a single endpoint.",
+      "HTTPS API + optional MCP adapter (`zkshare-mcp` on npm). Encrypted facts, signed proof envelopes, semantic search.",
     images: [
       {
         url: "/og-image.png",
@@ -53,7 +56,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "ZKshare — Privacy-oriented context API",
     description:
-      "Encrypted facts, signed proof envelopes, semantic search over encrypted data, and E2EE storage. One endpoint, six operations.",
+      "HTTPS API + optional MCP for Cursor (`zkshare-mcp`). Encrypted facts, proof envelopes, pgvector search, six operations.",
     images: ["/og-image.png"],
   },
   icons: {

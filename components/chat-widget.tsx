@@ -9,6 +9,7 @@ type Msg = { role: "bot" | "user"; text: string };
 const QUICK_REPLIES = [
   "How do I get an API key?",
   "What operations are available?",
+  "What is Cursor / MCP?",
   "What is E2EE / client-sealed?",
   "How does prove work?",
   "What are the pricing tiers?",
@@ -50,6 +51,11 @@ const FAQ: FaqEntry[] = [
     keywords: ["agent", "openai", "langchain", "function calling", "tool", "integrate", "sdk"],
     answer:
       'Register ZKshare as a tool/function in any agent framework (OpenAI, LangChain, CrewAI, Vercel AI SDK). Your agent only needs the API key — no SDK, no extra dependencies. See the **Agent Integration** section in the [docs](/docs#agent-integration) for a copy-paste example.',
+  },
+  {
+    keywords: ["mcp", "model context protocol", "cursor", "ide", "zkshare-mcp", "npx", "stdio"],
+    answer:
+      "Install the official **`zkshare-mcp`** package from npm: `npx -y zkshare-mcp`. It exposes the same operations as **`POST /api/v1/context`** via Model Context Protocol (stdio MCP) — Cursor and other MCP hosts run it using your **`ZKSHARE_API_KEY`** in env. Full steps: [Docs — MCP](/docs#mcp) · **npm**: [packages/zkshare-mcp](https://www.npmjs.com/package/zkshare-mcp)",
   },
   {
     keywords: ["search", "semantic", "vector", "pgvector", "find"],
