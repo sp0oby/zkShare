@@ -220,21 +220,6 @@ The \`operation\` field in the request body determines the action.`,
     id: "mcp",
     title: "Model Context Protocol (MCP)",
     content: "",
-    code: `npx -y zkshare-mcp
-
-# Cursor ~/.cursor/mcp.json (no repo path — only env)
-{
-  "mcpServers": {
-    "zkshare": {
-      "command": "npx",
-      "args": ["-y", "zkshare-mcp"],
-      "env": {
-        "ZKSHARE_API_KEY": "zk_live_REPLACE_ME",
-        "ZKSHARE_API_URL": "https://zkshare.io"
-      }
-    }
-  }
-}`,
   },
   {
     id: "responsibilities",
@@ -450,10 +435,16 @@ function McpDocsSectionBody() {
         <span className="font-mono text-foreground text-sm">http://localhost:3000</span> only when targeting a self-hosted stack.
       </p>
       <p>
-        Advanced{" "}
-        <strong className="text-foreground">client-sealed</strong>{" "}
-        <code className="font-mono text-sm text-foreground">store</code> payloads (ciphertext + embedding bundle) use
-        HTTPS only — follow the REST / OpenAPI examples; MCP tools cover server-sealed workflows.
+        Configure your MCP host only in env (same key as HTTPS). Typical pattern: spawn{" "}
+        <code className="rounded border border-foreground/15 bg-foreground/5 px-1.5 py-0.5 font-mono text-sm text-foreground">
+          npx
+        </code>{" "}
+        with arguments{" "}
+        <code className="rounded border border-foreground/15 bg-foreground/5 px-1.5 py-0.5 font-mono text-sm text-foreground">
+          -y zkshare-mcp
+        </code>
+        {" — "}no workspace <code className="font-mono text-sm text-foreground">cwd</code> is required.
+        Example hosts: Cursor MCP settings · full JSON snippets are on the zkshare-mcp package page linked above.
       </p>
     </div>
   );
