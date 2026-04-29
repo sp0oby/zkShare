@@ -220,6 +220,18 @@ The \`operation\` field in the request body determines the action.`,
     id: "mcp",
     title: "Model Context Protocol (MCP)",
     content: "",
+    code: `{
+  "mcpServers": {
+    "zkshare": {
+      "command": "npx",
+      "args": ["-y", "zkshare-mcp"],
+      "env": {
+        "ZKSHARE_API_KEY": "zk_live_REPLACE_ME",
+        "ZKSHARE_API_URL": "https://zkshare.io"
+      }
+    }
+  }
+}`,
   },
   {
     id: "responsibilities",
@@ -435,16 +447,19 @@ function McpDocsSectionBody() {
         <span className="font-mono text-foreground text-sm">http://localhost:3000</span> only when targeting a self-hosted stack.
       </p>
       <p>
-        Configure your MCP host only in env (same key as HTTPS). Typical pattern: spawn{" "}
+        Advanced{" "}
+        <strong className="text-foreground">client-sealed</strong>{" "}
+        <code className="font-mono text-sm text-foreground">store</code> payloads (ciphertext + embedding bundle) use
+        HTTPS only — follow the REST / OpenAPI examples; MCP tools cover server-sealed workflows.
+      </p>
+      <p>
+        <strong className="text-foreground">Cursor:</strong> merge the snippet below into your{" "}
+        <span className="font-mono text-sm text-foreground">~/.cursor/mcp.json</span>{" "}
+        (replace placeholders). Requires Node/npm so{" "}
         <code className="rounded border border-foreground/15 bg-foreground/5 px-1.5 py-0.5 font-mono text-sm text-foreground">
           npx
         </code>{" "}
-        with arguments{" "}
-        <code className="rounded border border-foreground/15 bg-foreground/5 px-1.5 py-0.5 font-mono text-sm text-foreground">
-          -y zkshare-mcp
-        </code>
-        {" — "}no workspace <code className="font-mono text-sm text-foreground">cwd</code> is required.
-        Example hosts: Cursor MCP settings · full JSON snippets are on the zkshare-mcp package page linked above.
+        can spawn <strong className="text-foreground">zkshare-mcp</strong>.
       </p>
     </div>
   );
@@ -651,7 +666,11 @@ Your agent only needs the API key. No SDKs, no extra dependencies.`}
               </div>
               {section.code && (
                 <div className="mt-6">
-                  <CodeBlock code={section.code} language="bash" />
+                  <CodeBlock
+                    code={section.code}
+                    language={section.id === "mcp" ? "json" : "bash"}
+                    title={section.id === "mcp" ? "~/.cursor/mcp.json" : undefined}
+                  />
                 </div>
               )}
             </motion.section>
