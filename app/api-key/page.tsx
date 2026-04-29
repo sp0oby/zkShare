@@ -7,9 +7,10 @@ import { useSearchParams } from "next/navigation";
 import { ArrowLeft, Copy, Check, RefreshCw, Eye, EyeOff } from "lucide-react";
 import { Navbar } from "@/components/navbar";
 import { GridBackground } from "@/components/grid-background";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
+import { cn } from "@/lib/utils";
 import { PRICING } from "@/lib/pricing";
 
 export default function ApiKeyPage() {
@@ -186,13 +187,16 @@ export default function ApiKeyPage() {
                 {hasSession && nextDest === "/dashboard" ? (
                   <div className="border border-foreground/10 p-4 bg-foreground/[0.02] space-y-3">
                     <p className="text-sm font-mono text-foreground">You&apos;re signed in.</p>
-                    <Button
-                      type="button"
-                      className="w-full font-mono rounded-none bg-foreground text-background"
-                      asChild
+                    <Link
+                      href="/dashboard"
+                      prefetch={false}
+                      className={cn(
+                        buttonVariants({ variant: "default" }),
+                        "w-full font-mono rounded-none bg-foreground text-background hover:bg-foreground/90",
+                      )}
                     >
-                      <Link href="/dashboard">Continue to dashboard</Link>
-                    </Button>
+                      Continue to dashboard
+                    </Link>
                     <p className="text-xs text-muted-foreground">
                       Create an API key below only if you need to call the HTTP API — not required to open the dashboard.
                     </p>

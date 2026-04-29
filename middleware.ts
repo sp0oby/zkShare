@@ -27,16 +27,10 @@ export async function middleware(request: NextRequest) {
     },
   });
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user && request.nextUrl.pathname.startsWith("/dashboard")) {
-    const redirectUrl = request.nextUrl.clone();
-    redirectUrl.pathname = "/api-key";
-    redirectUrl.searchParams.set("next", "/dashboard");
-    return NextResponse.redirect(redirectUrl);
-  }
+  // Refresh session cookies for downstream renders. Dashboard access is gated in
+  // `app/dashboard/layout.tsx` — redirecting here (Edge) can miss cookie sync and
+  // swallow client navigations without a visible URL change when already on `/api-key?next=`.
+  await supabase.auth.getUser();
 
   return response;
 }
