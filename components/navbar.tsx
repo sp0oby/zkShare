@@ -49,6 +49,17 @@ export function Navbar() {
             Docs
           </Link>
           <Link
+            href="/ai-context"
+            className={cn(
+              "text-sm font-mono tracking-wide transition-colors hover:text-foreground",
+              pathname === "/ai-context"
+                ? "text-foreground"
+                : "text-muted-foreground"
+            )}
+          >
+            AI briefing
+          </Link>
+          <Link
             href="/dashboard"
             className={cn(
               "text-sm font-mono tracking-wide transition-colors hover:text-foreground",
@@ -108,6 +119,17 @@ export function Navbar() {
                   )}
                 >
                   Docs
+                </Link>
+              </SheetClose>
+              <SheetClose asChild>
+                <Link
+                  href="/ai-context"
+                  className={cn(
+                    "py-3 border-b border-foreground/10 text-left",
+                    pathname === "/ai-context" ? "text-foreground" : "text-muted-foreground",
+                  )}
+                >
+                  AI briefing
                 </Link>
               </SheetClose>
               <SheetClose asChild>
