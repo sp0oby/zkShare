@@ -219,19 +219,10 @@ The \`operation\` field in the request body determines the action.`,
   {
     id: "mcp",
     title: "Model Context Protocol (MCP)",
-    content: `**Install from npm — no zkShare repo required** once [\`zkshare-mcp\`](https://www.npmjs.com/package/zkshare-mcp) is published. The package speaks **stdio MCP** and proxies to **\`POST /api/v1/context\`** with **\`ZKSHARE_API_KEY\`**.
+    content: "",
+    code: `npx -y zkshare-mcp
 
-Requirements: Node.js 18+. Get a key from [/api-key](/api-key).
-
-Optional **\`ZKSHARE_API_URL\`** defaults to \`https://zkshare.io\`; set \`http://localhost:3000\` only when your Next app runs locally.
-
-**Until npm publish:** clone this repo, \`pnpm install\`, **\`pnpm mcp\`**, source \`packages/zkshare-mcp/\`.
-
-Advanced **client-sealed** ciphertext \`store\` (embedding bundle) stays on HTTPS/OpenAPI.`,
-    code: `# End users — run via npx (IDE starts this process; omit cwd)
-npx -y zkshare-mcp
-
-# Cursor ~/.cursor/mcp.json
+# Cursor ~/.cursor/mcp.json (no repo path — only env)
 {
   "mcpServers": {
     "zkshare": {
@@ -417,6 +408,56 @@ const operations = [
 }`,
   },
 ];
+
+function McpDocsSectionBody() {
+  return (
+    <div className="text-muted-foreground leading-relaxed font-sans text-base space-y-4 not-prose">
+      <p>
+        Install the{" "}
+        <a
+          href="https://www.npmjs.com/package/zkshare-mcp"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-foreground underline underline-offset-2"
+        >
+          zkshare-mcp
+        </a>{" "}
+        package from npm — no clone of this repo required. It speaks{" "}
+        <strong className="text-foreground">stdio MCP</strong> and proxies to{" "}
+        <code className="rounded border border-foreground/15 bg-foreground/5 px-1.5 py-0.5 font-mono text-sm text-foreground">
+          POST /api/v1/context
+        </code>{" "}
+        using your{" "}
+        <code className="rounded border border-foreground/15 bg-foreground/5 px-1.5 py-0.5 font-mono text-sm text-foreground">
+          ZKSHARE_API_KEY
+        </code>
+        .
+      </p>
+      <p>
+        Requirements: Node.js 18+. Generate a key on{" "}
+        <Link href="/api-key" className="text-foreground underline underline-offset-2">
+          /api-key
+        </Link>
+        .
+      </p>
+      <p>
+        Optional{" "}
+        <code className="rounded border border-foreground/15 bg-foreground/5 px-1.5 py-0.5 font-mono text-sm text-foreground">
+          ZKSHARE_API_URL
+        </code>{" "}
+        defaults to{" "}
+        <span className="font-mono text-foreground text-sm">https://zkshare.io</span>; set{" "}
+        <span className="font-mono text-foreground text-sm">http://localhost:3000</span> only when targeting a self-hosted stack.
+      </p>
+      <p>
+        Advanced{" "}
+        <strong className="text-foreground">client-sealed</strong>{" "}
+        <code className="font-mono text-sm text-foreground">store</code> payloads (ciphertext + embedding bundle) use
+        HTTPS only — follow the REST / OpenAPI examples; MCP tools cover server-sealed workflows.
+      </p>
+    </div>
+  );
+}
 
 function QuickStartSection() {
   const [lang, setLang] = useState<QuickStartLang>("javascript");
@@ -609,9 +650,13 @@ Your agent only needs the API key. No SDKs, no extra dependencies.`}
                 {section.title}
               </h2>
               <div className="prose prose-neutral max-w-none">
-                <pre className="whitespace-pre-wrap text-muted-foreground leading-relaxed font-sans text-base">
-                  {section.content}
-                </pre>
+                {section.id === "mcp" ? (
+                  <McpDocsSectionBody />
+                ) : (
+                  <pre className="whitespace-pre-wrap text-muted-foreground leading-relaxed font-sans text-base">
+                    {section.content}
+                  </pre>
+                )}
               </div>
               {section.code && (
                 <div className="mt-6">

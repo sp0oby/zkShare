@@ -1,8 +1,8 @@
 # `zkshare-mcp`
 
-Stdio [Model Context Protocol](https://modelcontextprotocol.io/) server for **[ZKshare](https://zkshare.io)**. It forwards tool calls to `POST /api/v1/context` with your API key.
+Published on [npm](https://www.npmjs.com/package/zkshare-mcp). Stdio [Model Context Protocol](https://modelcontextprotocol.io/) server for **[ZKshare](https://zkshare.io)** — forwards tool calls to `POST /api/v1/context` with your API key.
 
-## Install (end users — no repo clone)
+## Use (no repo clone)
 
 Needs **Node.js ≥ 18**.
 
@@ -10,16 +10,16 @@ Needs **Node.js ≥ 18**.
 npx -y zkshare-mcp
 ```
 
-That command is usually run **by your IDE** (Cursor, etc.) — you only set env and the process path in MCP settings.
+Your IDE normally runs this; set env in MCP settings.
 
-## Env
+### Env
 
 | Variable | Required | Description |
-|----------|----------|----------------|
+|----------|----------|-------------|
 | `ZKSHARE_API_KEY` | Yes | From [zkshare.io/api-key](https://zkshare.io/api-key) |
-| `ZKSHARE_API_URL` | No | Default `https://zkshare.io`. Use `http://localhost:3000` only when targeting a self-hosted Next app. |
+| `ZKSHARE_API_URL` | No | Default `https://zkshare.io`. Use `http://localhost:3000` only for a self-hosted API. |
 
-## Cursor `~/.cursor/mcp.json`
+### Cursor `~/.cursor/mcp.json`
 
 ```json
 {
@@ -36,24 +36,13 @@ That command is usually run **by your IDE** (Cursor, etc.) — you only set env 
 }
 ```
 
-On Windows, `npx` is available if Node is installed (`npx.cmd`).
+On Windows, `npx` ships with Node (`npx.cmd`).
 
-## Develop in this monorepo
-
-From the repository root:
+## Develop in the zkShare repo
 
 ```bash
 pnpm install
-pnpm run build:mcp
 pnpm mcp
 ```
 
-## Publish to npm
-
-Owners: from `packages/zkshare-mcp` after `pnpm run build`:
-
-```bash
-npm publish --access public
-```
-
-Bump `package.json` **version** and `src/version.ts` **VERSION** together before releases.
+Source: `src/cli.ts`. Version is duplicated in `package.json` and `src/version.ts` for maintainers’ release bumps.

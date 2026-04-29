@@ -57,15 +57,13 @@ Authoritative request and response shapes live in [`types/index.ts`](./types/ind
 
 ### Model Context Protocol (MCP)
 
-The npm package **`zkshare-mcp`** (source in **`packages/zkshare-mcp/`**) is a **stdio MCP server**
-exposing tools (`zkshare_store`, `zkshare_prove`, …) that invoke **`POST https://zkshare.io/api/v1/context`**
-(or your **`ZKSHARE_API_URL`**) with **`ZKSHARE_API_KEY`**.
+The npm package **`zkshare-mcp`** ([npm](https://www.npmjs.com/package/zkshare-mcp), source **`packages/zkshare-mcp/`**) is a **stdio MCP server** exposing tools (`zkshare_store`, `zkshare_prove`, …) that call **`POST https://zkshare.io/api/v1/context`** (or your **`ZKSHARE_API_URL`**) with **`ZKSHARE_API_KEY`**.
 
-**End users:** install [Node.js](https://nodejs.org/) ≥ 18, then run **`npx -y zkshare-mcp`** — no clone of this repo — and point Cursor (or another host) at that binary with env vars (example below).
+**End users:** Node.js ≥ 18, then **`npx -y zkshare-mcp`** — no clone. Configure your host (example below).
 
-**Contributors:** from the repo root, **`pnpm install`**, **`pnpm mcp`** (builds locally + runs).
+**Contributors:** from the repo root **`pnpm install`**, then **`pnpm mcp`** to run the local package; source is **`packages/zkshare-mcp/`**.
 
-Advanced **client-sealed** `store` bodies are not exposed via MCP tools — use HTTPS/OpenAPI directly.
+Advanced **client-sealed** `store` bodies stay on HTTPS/OpenAPI — not via MCP tools.
 
 ```json
 // ~/.cursor/mcp.json
@@ -139,6 +137,7 @@ Advanced **client-sealed** `store` bodies are not exposed via MCP tools — use 
 | `types/index.ts` | Zod request schema, operation enum, error codes, and shared row types. |
 | `supabase/migrations/` | Ordered SQL migrations. |
 | `circuits/` | Notes and placeholders for future Groth16 wiring. `snarkjs` is a runtime dependency but is not on the default trust path. |
+| `packages/zkshare-mcp/` | Publishable **`zkshare-mcp`** npm package — MCP stdio server that proxies to `/api/v1/context`. |
 | `openapi.json` | OpenAPI 3.1 description of the public surface. |
 | `SECURITY.md` | Threat model, operational checklist, and the encryption / LLM matrix. |
 
