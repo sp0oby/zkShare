@@ -1,6 +1,9 @@
 /**
  * Rasterize brand shield (fixed dark bg) for Google Search favicon requirements
- * (square >=48px, classic .ico). Run: node scripts/gen-favicon.cjs
+ * (square >=48px, classic .ico).
+ *
+ * Dev deps (install before running): `pnpm add -D sharp to-ico`
+ * Then: `pnpm gen:favicon`
  */
 const fs = require("fs");
 const path = require("path");
