@@ -53,13 +53,6 @@ export default function AiContextPage() {
             language="plaintext"
             title="ZKshare — paste into Grok / ChatGPT / Claude"
           />
-
-          <p className="text-xs text-muted-foreground font-mono mt-10">
-            Bump the briefing in{" "}
-            <code className="text-foreground/70">lib/ai-briefing.ts</code> whenever the REST
-            surface or MCP contract changes so this page and{" "}
-            <code className="text-foreground/70">/llms.txt</code> stay in sync.
-          </p>
         </div>
       </main>
     </div>
