@@ -17,6 +17,9 @@ export default function ApiKeyPage() {
   const nextDest = searchParams.get("next");
   const flowParam = searchParams.get("flow");
 
+  /** Primitive so syncing runs reliably when only the query string changes on the same path (`/api-key` → `/api-key?flow=signin`). */
+  const flowQuery = flowParam ?? "";
+
   const [email, setEmail] = useState("");
   const [apiKey, setApiKey] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
@@ -38,11 +41,10 @@ export default function ApiKeyPage() {
   const mustPickAuthMode = needsDashboardGate && authMode === null;
 
   useEffect(() => {
-    const flow = searchParams.get("flow");
-    if (flow === "signin" || flow === "signup") {
-      setAuthMode(flow);
+    if (flowQuery === "signin" || flowQuery === "signup") {
+      setAuthMode(flowQuery);
     }
-  }, [searchParams]);
+  }, [flowQuery]);
 
   useEffect(() => {
     const supabase = createSupabaseBrowserClient();
@@ -159,7 +161,13 @@ export default function ApiKeyPage() {
             {nextDest !== "/dashboard" ? (
               <p className="text-sm font-mono text-muted-foreground mb-12">
                 Already have an account?{" "}
-                <Link href="/api-key?flow=signin" className="text-foreground underline underline-offset-4">
+                <Link
+                  href="/api-key?flow=signin"
+                  scroll={false}
+                  prefetch={false}
+                  className="text-foreground underline underline-offset-4"
+                  onClick={() => setAuthMode("signin")}
+                >
                   Request a sign-in link only
                 </Link>
                 .
