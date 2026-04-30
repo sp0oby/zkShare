@@ -447,6 +447,30 @@ function McpDocsSectionBody() {
         <span className="font-mono text-foreground text-sm">http://localhost:3000</span> only when targeting a self-hosted stack.
       </p>
       <p>
+        <strong className="text-foreground">Official MCP Registry</strong> listing (discovery / metadata):{" "}
+        <code className="rounded border border-foreground/15 bg-foreground/5 px-1.5 py-0.5 font-mono text-sm text-foreground">
+          io.github.sp0oby/zkshare
+        </code>
+        {" — "}
+        <a
+          href="https://registry.modelcontextprotocol.io/v0.1/servers?search=io.github.sp0oby/zkshare"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-foreground underline underline-offset-2"
+        >
+          registry lookup
+        </a>
+        {" · "}
+        <a
+          href="https://github.com/modelcontextprotocol/registry"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-foreground underline underline-offset-2"
+        >
+          about the registry
+        </a>
+      </p>
+      <p>
         Advanced{" "}
         <strong className="text-foreground">client-sealed</strong>{" "}
         <code className="font-mono text-sm text-foreground">store</code> payloads (ciphertext + embedding bundle) use

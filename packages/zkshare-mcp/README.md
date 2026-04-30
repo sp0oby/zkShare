@@ -2,7 +2,7 @@
 
 Published on [npm](https://www.npmjs.com/package/zkshare-mcp). Stdio [Model Context Protocol](https://modelcontextprotocol.io/) server for **[ZKshare](https://zkshare.io)** — forwards tool calls to `POST /api/v1/context` with your API key.
 
-**Registry name:** `io.github.sp0oby/zkshare` (verification field `mcpName` in [`package.json`](./package.json) must stay identical to the `name` field in [`server.json`](./server.json)).
+**Registry name:** [`io.github.sp0oby/zkshare`](https://registry.modelcontextprotocol.io/v0.1/servers?search=io.github.sp0oby/zkshare) on the official [Model Context Protocol Registry](https://github.com/modelcontextprotocol/registry) preview (verification field `mcpName` in [`package.json`](./package.json) must stay identical to the `name` field in [`server.json`](./server.json)).
 
 ## MCP Registry (`registry.modelcontextprotocol.io`)
 

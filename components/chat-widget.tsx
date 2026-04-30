@@ -55,7 +55,7 @@ const FAQ: FaqEntry[] = [
   {
     keywords: ["mcp", "model context protocol", "cursor", "ide", "zkshare-mcp", "npx", "stdio"],
     answer:
-      "Install the official **`zkshare-mcp`** package from npm: `npx -y zkshare-mcp`. It exposes the same operations as **`POST /api/v1/context`** via Model Context Protocol (stdio MCP) — Cursor and other MCP hosts run it using your **`ZKSHARE_API_KEY`** in env. Full steps: [Docs — MCP](/docs#mcp) · **npm**: [packages/zkshare-mcp](https://www.npmjs.com/package/zkshare-mcp)",
+      "Install the official **`zkshare-mcp`** package from npm (`npx -y zkshare-mcp`). Canonical **MCP Registry** ID for discovery: **`io.github.sp0oby/zkshare`** ([lookup](https://registry.modelcontextprotocol.io/v0.1/servers?search=io.github.sp0oby/zkshare)). It exposes the same operations as **`POST /api/v1/context`** via Model Context Protocol (stdio MCP) — Cursor and other MCP hosts run it using your **`ZKSHARE_API_KEY`** in env. Full steps: [Docs — MCP](/docs#mcp) · **npm**: [packages/zkshare-mcp](https://www.npmjs.com/package/zkshare-mcp)",
   },
   {
     keywords: ["search", "semantic", "vector", "pgvector", "find"],

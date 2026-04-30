@@ -62,6 +62,8 @@ MODEL CONTEXT PROTOCOL (MCP) — OPTIONAL
 ══════════════════════════════════════════════════════════════════════════════
 npm package: zkshare-mcp (stdio MCP; proxies same POST endpoint with env.)
 Install/use: npx -y zkshare-mcp
+Official MCP Registry ID (discovery): io.github.sp0oby/zkshare
+  Lookup: https://registry.modelcontextprotocol.io/v0.1/servers?search=io.github.sp0oby/zkshare
 
 Env passed by host:
   ZKSHARE_API_KEY=<required>
@@ -99,6 +101,7 @@ SOURCES
 Human docs (examples, trust model): ${s}/docs
 Repository: https://github.com/sp0oby/zkShare
 npm MCP: https://www.npmjs.com/package/zkshare-mcp
+MCP Registry (canonical ID): io.github.sp0oby/zkshare — https://registry.modelcontextprotocol.io/v0.1/servers?search=io.github.sp0oby/zkshare
 
 — END —
 `;

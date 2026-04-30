@@ -59,6 +59,8 @@ Authoritative request and response shapes live in [`types/index.ts`](./types/ind
 
 The npm package **`zkshare-mcp`** ([npm](https://www.npmjs.com/package/zkshare-mcp), source **`packages/zkshare-mcp/`**) is a **stdio MCP server** exposing tools (`zkshare_store`, `zkshare_prove`, …) that call **`POST https://zkshare.io/api/v1/context`** (or your **`ZKSHARE_API_URL`**) with **`ZKSHARE_API_KEY`**.
 
+**Official MCP Registry** canonical name: **`io.github.sp0oby/zkshare`** — [registry lookup](https://registry.modelcontextprotocol.io/v0.1/servers?search=io.github.sp0oby/zkshare) · [About the MCP Registry](https://github.com/modelcontextprotocol/registry) (discovery metadata; runnable package remains on npm).
+
 **End users:** Node.js ≥ 18, then **`npx -y zkshare-mcp`** — no clone. Configure your host (example below).
 
 **Contributors:** from the repo root **`pnpm install`**, then **`pnpm mcp`** to run the local package; source is **`packages/zkshare-mcp/`**.

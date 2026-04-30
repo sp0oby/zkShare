@@ -24,6 +24,8 @@ export const metadata: Metadata = {
     "AI agents",
     "zkshare-mcp",
     "Cursor MCP",
+    "MCP Registry",
+    "io.github.sp0oby/zkshare",
     "npm",
     "proof envelopes",
     "semantic search",

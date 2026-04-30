@@ -18,7 +18,7 @@ const jsonLd = {
   applicationCategory: "DeveloperApplication",
   operatingSystem: "Any",
   description:
-    "Privacy-oriented context API — HTTPS REST `POST /api/v1/context` plus optional Model Context Protocol server `zkshare-mcp` on npm for Cursor-compatible IDEs.",
+    "Privacy-oriented context API — HTTPS REST `POST /api/v1/context` plus optional Model Context Protocol server `zkshare-mcp` on npm (official registry id io.github.sp0oby/zkshare) for Cursor-compatible IDEs.",
   url: "https://zkshare.io",
   offers: {
     "@type": "Offer",
@@ -50,7 +50,7 @@ const features = [
   {
     title: "Built for agents",
     description:
-      "Share context across tools, sessions, and agent swarms without surfacing raw values to downstream systems. Single-use share tokens are bound to a recipient and expiry. Prefer an IDE-native flow? Install the **`zkshare-mcp`** package from npm (`npx -y zkshare-mcp`) and wire it into Cursor MCP — same backend, structured tools.",
+      "Share context across tools, sessions, and agent swarms without surfacing raw values to downstream systems. Single-use share tokens are bound to a recipient and expiry. Prefer an IDE-native flow? Install the **`zkshare-mcp`** package from npm (`npx -y zkshare-mcp`) and wire it into Cursor MCP — same backend, structured tools. Listed as **`io.github.sp0oby/zkshare`** on the official MCP Registry.",
     icon: <Zap className="w-5 h-5" />,
   },
   {
@@ -118,7 +118,9 @@ export default function Home() {
               properties without revealing them, and share verifiable answers
               between agents — through one HTTPS endpoint or the optional MCP
               bridge (<code className="text-foreground">zkshare-mcp</code>{" "}
-              on npm for Cursor-compatible hosts).
+              on npm — official registry{" "}
+              <code className="text-foreground">io.github.sp0oby/zkshare</code>{" "}
+              for Cursor-compatible hosts).
             </p>
             <div className="flex flex-col sm:flex-row flex-wrap gap-3 sm:gap-4">
               <Link
@@ -291,12 +293,24 @@ export default function Home() {
               <span className="uppercase tracking-wider text-foreground/70">MCP</span> adapter:{" "}
               <span className="text-foreground">npx -y zkshare-mcp</span>
               {" — "}
+              <span className="text-foreground/90">registry</span>{" "}
+              <span className="text-foreground">io.github.sp0oby/zkshare</span>
+              {" — "}
               <Link
                 href="/docs#mcp"
                 className="text-foreground underline underline-offset-[3px] decoration-foreground/40 hover:decoration-foreground"
               >
                 setup &amp; Cursor config
               </Link>
+              {" · "}
+              <a
+                href="https://registry.modelcontextprotocol.io/v0.1/servers?search=io.github.sp0oby/zkshare"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-foreground underline underline-offset-[3px] decoration-foreground/40 hover:decoration-foreground"
+              >
+                MCP Registry
+              </a>
               {" · "}
               <a
                 href="https://www.npmjs.com/package/zkshare-mcp"
