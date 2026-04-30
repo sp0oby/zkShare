@@ -1,7 +1,8 @@
 {
   "name": "zkshare-mcp",
-  "version": "1.0.0",
-  "description": "Model Context Protocol (stdio) server for ZKshare — POST /api/v1/context",
+  "version": "1.0.1",
+  "mcpName": "io.github.sp0oby/zkshare",
+  "description": "ZKshare stdio MCP: store/prove/share, semantic search, sandbox proxy to HTTPS /api/v1/context.",
   "license": "MIT",
   "type": "module",
   "engines": {
@@ -26,6 +27,14 @@
     "cursor"
   ],
   "homepage": "https://zkshare.io",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sp0oby/zkShare.git",
+    "directory": "packages/zkshare-mcp"
+  },
+  "bugs": {
+    "url": "https://github.com/sp0oby/zkShare/issues"
+  },
   "publishConfig": {
     "access": "public"
   },

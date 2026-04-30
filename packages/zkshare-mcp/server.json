@@ -1,0 +1,47 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.sp0oby/zkshare",
+  "title": "ZKshare",
+  "description": "ZKshare stdio MCP: store/prove/share, semantic search, sandbox proxy to HTTPS /api/v1/context.",
+  "websiteUrl": "https://zkshare.io/docs",
+  "version": "1.0.1",
+  "icons": [
+    {
+      "src": "https://zkshare.io/icon.svg",
+      "mimeType": "image/svg+xml",
+      "sizes": ["any"]
+    }
+  ],
+  "repository": {
+    "url": "https://github.com/sp0oby/zkShare",
+    "source": "github",
+    "subfolder": "packages/zkshare-mcp"
+  },
+  "packages": [
+    {
+      "registryType": "npm",
+      "identifier": "zkshare-mcp",
+      "version": "1.0.1",
+      "transport": {
+        "type": "stdio"
+      },
+      "environmentVariables": [
+        {
+          "name": "ZKSHARE_API_KEY",
+          "description": "ZKshare API key (zk_live_…). Create one at zkshare.io/api-key — required for POST /api/v1/context.",
+          "isRequired": true,
+          "format": "string",
+          "isSecret": true
+        },
+        {
+          "name": "ZKSHARE_API_URL",
+          "description": "API origin including scheme; omit for production (https://zkshare.io). Use http://localhost:3000 only when self-hosting.",
+          "isRequired": false,
+          "format": "string",
+          "isSecret": false,
+          "default": "https://zkshare.io"
+        }
+      ]
+    }
+  ]
+}
