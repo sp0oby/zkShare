@@ -8,6 +8,8 @@ Published on [npm](https://www.npmjs.com/package/zkshare-mcp). Stdio [Model Cont
 
 ZKshare participates in (or prepares for) discovery via the **[official MCP Registry](https://github.com/modelcontextprotocol/registry)** preview. Metadata lives in **`server.json`** next to this package; the runnable artifact stays on npm.
 
+Having **`zkshare-mcp`** on npm (e.g. v1.0.0) is only half the story: the registry **checks the tarball’s `package.json` for **`mcpName`** — that field was added in repo for **v1.0.1**. Until **1.0.1** is published to npm, `mcp-publisher publish` may fail verification. **`npx -y zkshare-mcp@1.0.0`** continues to work unchanged for users already on npm.
+
 ### One-time prerequisites
 
 1. [npm account](https://www.npmjs.com) with publish rights to **`zkshare-mcp`**.
